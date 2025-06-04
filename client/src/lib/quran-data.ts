@@ -24,6 +24,13 @@ export const createAudioUrl = (surahId: number, ayahNumber: number): string => {
   return `https://everyayah.com/data/Alafasy_128kbps/${paddedSurah}${paddedAyah}.mp3`;
 };
 
+export const createAlternativeAudioUrl = (surahId: number, ayahNumber: number): string => {
+  // Alternative source using different reciter (Abdul Basit)
+  const paddedSurah = surahId.toString().padStart(3, '0');
+  const paddedAyah = ayahNumber.toString().padStart(3, '0');
+  return `https://everyayah.com/data/Abdul_Basit_Murattal_192kbps/${paddedSurah}${paddedAyah}.mp3`;
+};
+
 export const getEstimatedDuration = (numberOfAyahs: number, pauseDuration: number): number => {
   // Estimate ~10 seconds per ayah + pause duration
   const averageAyahDuration = 10;

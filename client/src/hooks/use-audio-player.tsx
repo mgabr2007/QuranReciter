@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Ayah } from "@shared/schema";
-import { createAudioUrl } from "@/lib/quran-data";
+import { createAudioUrl, createAlternativeAudioUrl } from "@/lib/quran-data";
 
 interface UseAudioPlayerProps {
   ayahs: Ayah[];
@@ -70,8 +70,10 @@ export const useAudioPlayer = ({
           const audio = audioRef.current!;
           
           const onCanPlay = () => {
+            console.log('Audio can play:', audioUrl);
             audio.removeEventListener('canplay', onCanPlay);
             audio.removeEventListener('error', onError);
+            audio.removeEventListener('loadstart', onLoadStart);
             setState(prev => ({ 
               ...prev, 
               isLoading: false, 
@@ -80,21 +82,36 @@ export const useAudioPlayer = ({
             resolve(void 0);
           };
           
-          const onError = () => {
+          const onError = (e: Event) => {
+            console.error('Audio error:', audioUrl, e);
             audio.removeEventListener('canplay', onCanPlay);
             audio.removeEventListener('error', onError);
+            audio.removeEventListener('loadstart', onLoadStart);
             reject(new Error('Failed to load audio'));
+          };
+
+          const onLoadStart = () => {
+            console.log('Audio load started:', audioUrl);
           };
           
           audio.addEventListener('canplay', onCanPlay);
           audio.addEventListener('error', onError);
+          audio.addEventListener('loadstart', onLoadStart);
           
-          // Timeout after 10 seconds
+          // Reduce timeout and provide better feedback
           setTimeout(() => {
             audio.removeEventListener('canplay', onCanPlay);
             audio.removeEventListener('error', onError);
-            reject(new Error('Audio load timeout'));
-          }, 10000);
+            audio.removeEventListener('loadstart', onLoadStart);
+            console.warn('Audio load timeout:', audioUrl);
+            // Don't reject on timeout, just continue with estimated duration
+            setState(prev => ({ 
+              ...prev, 
+              isLoading: false, 
+              duration: 10 
+            }));
+            resolve(void 0);
+          }, 5000);
         });
       }
     } catch (error) {
