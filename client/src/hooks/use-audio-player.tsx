@@ -84,6 +84,20 @@ export const useAudioPlayer = ({
             isLoading: false, 
             duration: audio.duration || 10 
           }));
+          
+          // Test audio playback capability
+          audio.volume = 0.1;
+          const playPromise = audio.play();
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
+              audio.pause();
+              audio.currentTime = 0;
+              console.log('Audio playback test successful');
+            }).catch(error => {
+              console.warn('Audio autoplay blocked:', error.message);
+            });
+          }
+          
           resolve(true);
         };
         
