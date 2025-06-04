@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { SurahSelector } from "@/components/surah-selector";
 import { PauseSettings } from "@/components/pause-settings";
 import { AudioPlayer } from "@/components/audio-player";
@@ -9,7 +10,7 @@ import { useAudioPlayer } from "@/hooks/use-audio-player";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Settings, History as HistoryIcon } from "lucide-react";
 import type { Surah, Ayah, UserPreferences, BookmarkedAyah } from "@shared/schema";
 import { getSurahDisplayName } from "@/lib/quran-data";
 
@@ -22,6 +23,8 @@ export default function Home() {
   const [endAyah, setEndAyah] = useState(7);
   const [pauseDuration, setPauseDuration] = useState(5);
   const [autoRepeat, setAutoRepeat] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
 
   // Load user preferences
   const { data: preferences } = useQuery<UserPreferences>({
@@ -72,15 +75,36 @@ export default function Home() {
     },
   });
 
-  // Create session mutation
+  // Session tracking mutations
   const createSessionMutation = useMutation({
     mutationFn: (data: {
       surahId: number;
+      surahName: string;
       startAyah: number;
       endAyah: number;
+      pauseDuration: number;
+    }) => apiRequest("POST", "/api/sessions", data),
+    onSuccess: (session: any) => {
+      setCurrentSessionId(session.id);
+      setSessionStartTime(new Date());
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
+    },
+  });
+
+  const updateSessionMutation = useMutation({
+    mutationFn: (data: {
+      sessionId: number;
       completedAyahs: number;
       sessionTime: number;
-    }) => apiRequest("POST", "/api/sessions", data),
+      isCompleted?: boolean;
+    }) => apiRequest("PUT", `/api/sessions/${data.sessionId}`, {
+      completedAyahs: data.completedAyahs,
+      sessionTime: data.sessionTime,
+      isCompleted: data.isCompleted,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
+    },
   });
 
   // Initialize preferences
@@ -113,19 +137,24 @@ export default function Home() {
       }
     },
     onSessionComplete: () => {
-      // Save session data
-      createSessionMutation.mutate({
-        surahId: selectedSurah,
-        startAyah,
-        endAyah,
-        completedAyahs: selectedAyahs.length,
-        sessionTime: audioPlayer.getSessionTime(),
-      });
-      
-      toast({
-        title: "Session Complete",
-        description: "Congratulations! You've completed the selected ayahs.",
-      });
+      // Complete the session
+      if (currentSessionId && sessionStartTime) {
+        const sessionTime = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
+        updateSessionMutation.mutate({
+          sessionId: currentSessionId,
+          completedAyahs: selectedAyahs.length,
+          sessionTime,
+          isCompleted: true,
+        });
+        
+        toast({
+          title: "Session Completed",
+          description: `Completed ${selectedAyahs.length} ayahs in ${Math.floor(sessionTime / 60)}m ${sessionTime % 60}s`,
+        });
+        
+        setCurrentSessionId(null);
+        setSessionStartTime(null);
+      }
     },
   });
 
@@ -199,9 +228,17 @@ export default function Home() {
                 <p className="text-sm text-gray-600">Quran Recitation with Pause</p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600">
-              <Settings className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Link href="/history">
+                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
+                  <HistoryIcon className="h-4 w-4 mr-2" />
+                  History
+                </Button>
+              </Link>
+              <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600">
+                <Settings className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
