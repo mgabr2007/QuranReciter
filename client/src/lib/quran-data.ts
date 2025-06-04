@@ -16,15 +16,39 @@ export const getAyahRange = (totalAyahs: number, startAyah?: number, endAyah?: n
   return { start: Math.min(start, end), end: Math.max(start, end) };
 };
 
-export const createAudioUrl = (surahId: number, ayahNumber: number): string => {
-  // Using EveryAyah.com - authentic Quran recitation by Sheikh Mishary Al-Afasy
+export const createAudioUrl = async (surahId: number, ayahNumber: number): Promise<string> => {
+  try {
+    // Using Al-Quran Cloud API for individual ayah audio
+    const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surahId}:${ayahNumber}/ar.alafasy`);
+    const data = await response.json();
+    
+    if (data.code === 200 && data.data.audio) {
+      return data.data.audio;
+    }
+  } catch (error) {
+    console.warn('API request failed, using direct audio URL');
+  }
+  
+  // Direct authentic audio URL as backup
   const paddedSurah = surahId.toString().padStart(3, '0');
   const paddedAyah = ayahNumber.toString().padStart(3, '0');
   return `https://everyayah.com/data/Alafasy_128kbps/${paddedSurah}${paddedAyah}.mp3`;
 };
 
-export const createAlternativeAudioUrl = (surahId: number, ayahNumber: number): string => {
-  // Alternative authentic reciter - Sheikh Abdul Basit Abdul Samad
+export const createAlternativeAudioUrl = async (surahId: number, ayahNumber: number): Promise<string> => {
+  try {
+    // Alternative reciter - Sheikh Abdul Rahman Al-Sudais
+    const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surahId}:${ayahNumber}/ar.abdurrahmaansudais`);
+    const data = await response.json();
+    
+    if (data.code === 200 && data.data.audio) {
+      return data.data.audio;
+    }
+  } catch (error) {
+    console.warn('Alternative API request failed, using direct audio URL');
+  }
+  
+  // Direct authentic audio URL as backup
   const paddedSurah = surahId.toString().padStart(3, '0');
   const paddedAyah = ayahNumber.toString().padStart(3, '0');
   return `https://everyayah.com/data/Abdul_Basit_Murattal_192kbps/${paddedSurah}${paddedAyah}.mp3`;

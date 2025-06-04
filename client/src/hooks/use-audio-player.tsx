@@ -58,8 +58,8 @@ export const useAudioPlayer = ({
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     const ayah = ayahs[ayahIndex];
-    const primaryUrl = createAudioUrl(ayah.surahId, ayah.number);
-    const alternativeUrl = createAlternativeAudioUrl(ayah.surahId, ayah.number);
+    const primaryUrl = await createAudioUrl(ayah.surahId, ayah.number);
+    const alternativeUrl = await createAlternativeAudioUrl(ayah.surahId, ayah.number);
     
     const tryLoadAudio = async (url: string): Promise<boolean> => {
       return new Promise((resolve) => {
