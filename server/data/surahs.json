@@ -1,0 +1,140 @@
+{
+  "surahs": [
+    {
+      "id": 1,
+      "name": "Al-Fatiha",
+      "nameArabic": "الفاتحة",
+      "nameTranslation": "The Opening",
+      "totalAyahs": 7,
+      "revelation": "Meccan"
+    },
+    {
+      "id": 2,
+      "name": "Al-Baqarah",
+      "nameArabic": "البقرة",
+      "nameTranslation": "The Cow",
+      "totalAyahs": 286,
+      "revelation": "Medinan"
+    },
+    {
+      "id": 3,
+      "name": "Ali 'Imran",
+      "nameArabic": "آل عمران",
+      "nameTranslation": "Family of Imran",
+      "totalAyahs": 200,
+      "revelation": "Medinan"
+    },
+    {
+      "id": 18,
+      "name": "Al-Kahf",
+      "nameArabic": "الكهف",
+      "nameTranslation": "The Cave",
+      "totalAyahs": 110,
+      "revelation": "Meccan"
+    },
+    {
+      "id": 36,
+      "name": "Ya-Sin",
+      "nameArabic": "يس",
+      "nameTranslation": "Ya-Sin",
+      "totalAyahs": 83,
+      "revelation": "Meccan"
+    },
+    {
+      "id": 55,
+      "name": "Ar-Rahman",
+      "nameArabic": "الرحمن",
+      "nameTranslation": "The Beneficent",
+      "totalAyahs": 78,
+      "revelation": "Medinan"
+    },
+    {
+      "id": 67,
+      "name": "Al-Mulk",
+      "nameArabic": "الملك",
+      "nameTranslation": "The Sovereignty",
+      "totalAyahs": 30,
+      "revelation": "Meccan"
+    },
+    {
+      "id": 112,
+      "name": "Al-Ikhlas",
+      "nameArabic": "الإخلاص",
+      "nameTranslation": "The Sincerity",
+      "totalAyahs": 4,
+      "revelation": "Meccan"
+    }
+  ],
+  "ayahs": {
+    "1": [
+      {
+        "number": 1,
+        "text": "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+        "translation": "In the name of Allah, the Entirely Merciful, the Especially Merciful.",
+        "surahId": 1
+      },
+      {
+        "number": 2,
+        "text": "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
+        "translation": "All praise is due to Allah, Lord of the worlds.",
+        "surahId": 1
+      },
+      {
+        "number": 3,
+        "text": "الرَّحْمَٰنِ الرَّحِيمِ",
+        "translation": "The Entirely Merciful, the Especially Merciful,",
+        "surahId": 1
+      },
+      {
+        "number": 4,
+        "text": "مَالِكِ يَوْمِ الدِّينِ",
+        "translation": "Sovereign of the Day of Recompense.",
+        "surahId": 1
+      },
+      {
+        "number": 5,
+        "text": "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
+        "translation": "It is You we worship and You we ask for help.",
+        "surahId": 1
+      },
+      {
+        "number": 6,
+        "text": "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ",
+        "translation": "Guide us to the straight path -",
+        "surahId": 1
+      },
+      {
+        "number": 7,
+        "text": "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ",
+        "translation": "The path of those upon whom You have bestowed favor, not of those who have evoked [Your] anger or of those who are astray.",
+        "surahId": 1
+      }
+    ],
+    "112": [
+      {
+        "number": 1,
+        "text": "قُلْ هُوَ اللَّهُ أَحَدٌ",
+        "translation": "Say, \"He is Allah, [who is] One,",
+        "surahId": 112
+      },
+      {
+        "number": 2,
+        "text": "اللَّهُ الصَّمَدُ",
+        "translation": "Allah, the Eternal Refuge.",
+        "surahId": 112
+      },
+      {
+        "number": 3,
+        "text": "لَمْ يَلِدْ وَلَمْ يُولَدْ",
+        "translation": "He neither begets nor is born,",
+        "surahId": 112
+      },
+      {
+        "number": 4,
+        "text": "وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ",
+        "translation": "Nor is there to Him any equivalent.\"",
+        "surahId": 112
+      }
+    ]
+  }
+}

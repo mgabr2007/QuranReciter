@@ -1,0 +1,185 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap');
+
+:root {
+  --background: 0 0% 98%; /* #FAFAFA */
+  --foreground: 20 14.3% 4.1%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14.3% 4.1%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  --primary: 123 38% 22%; /* #2E7D32 - Islamic Green */
+  --primary-foreground: 0 0% 98%;
+  --secondary: 60 4.8% 95.9%;
+  --secondary-foreground: 24 9.8% 10%;
+  --accent: 60 4.8% 95.9%;
+  --accent-foreground: 24 9.8% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 20 14.3% 4.1%;
+  --radius: 0.75rem;
+  
+  /* Islamic theme colors */
+  --islamic-green: 123 38% 22%; /* #2E7D32 */
+  --islamic-light: 123 43% 31%; /* #4CAF50 */
+  --islamic-accent: 36 100% 50%; /* #FF9800 */
+  --islamic-dark: 123 53% 12%; /* #1B5E20 */
+  --surface: 0 0% 98%; /* #FAFAFA */
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --primary: 123 38% 22%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 240 4.9% 83.9%;
+  --radius: 0.75rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Roboto', sans-serif;
+  }
+}
+
+@layer components {
+  .font-arabic {
+    font-family: 'Amiri', serif;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+    text-rendering: optimizeLegibility;
+    line-height: 2;
+  }
+  
+  .islamic-green {
+    @apply bg-[hsl(var(--islamic-green))];
+  }
+  
+  .islamic-light {
+    @apply bg-[hsl(var(--islamic-light))];
+  }
+  
+  .islamic-accent {
+    @apply bg-[hsl(var(--islamic-accent))];
+  }
+  
+  .islamic-dark {
+    @apply bg-[hsl(var(--islamic-dark))];
+  }
+  
+  .text-islamic-green {
+    color: hsl(var(--islamic-green));
+  }
+  
+  .text-islamic-light {
+    color: hsl(var(--islamic-light));
+  }
+  
+  .text-islamic-accent {
+    color: hsl(var(--islamic-accent));
+  }
+  
+  .text-islamic-dark {
+    color: hsl(var(--islamic-dark));
+  }
+  
+  .bg-islamic-green {
+    background-color: hsl(var(--islamic-green));
+  }
+  
+  .bg-islamic-light {
+    background-color: hsl(var(--islamic-light));
+  }
+  
+  .bg-islamic-accent {
+    background-color: hsl(var(--islamic-accent));
+  }
+  
+  .bg-islamic-dark {
+    background-color: hsl(var(--islamic-dark));
+  }
+  
+  .hover\:bg-islamic-dark:hover {
+    background-color: hsl(var(--islamic-dark));
+  }
+  
+  .hover\:text-islamic-green:hover {
+    color: hsl(var(--islamic-green));
+  }
+  
+  .focus\:ring-islamic-green:focus {
+    --tw-ring-color: hsl(var(--islamic-green));
+  }
+  
+  .border-islamic-green {
+    border-color: hsl(var(--islamic-green));
+  }
+}
+
+/* Custom slider styling */
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: hsl(var(--islamic-green));
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.slider::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: hsl(var(--islamic-green));
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Smooth transitions */
+* {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Focus styles for accessibility */
+button:focus, input:focus, select:focus {
+  outline: 2px solid hsl(var(--islamic-green));
+  outline-offset: 2px;
+}
+
+/* RTL support for Arabic text */
+[dir="rtl"] {
+  text-align: right;
+  direction: rtl;
+}
+
+/* Progress bar animation */
+.progress-bar {
+  transition: width 0.3s ease-in-out;
+}
