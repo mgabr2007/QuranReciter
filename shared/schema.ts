@@ -1,5 +1,6 @@
 import { pgTable, text, serial, integer, boolean, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
+import { relations } from "drizzle-orm";
 import { z } from "zod";
 
 export const users = pgTable("users", {
@@ -64,6 +65,34 @@ export type RecitationSession = typeof recitationSessions.$inferSelect;
 export type InsertRecitationSession = z.infer<typeof insertRecitationSessionSchema>;
 export type BookmarkedAyah = typeof bookmarkedAyahs.$inferSelect;
 export type InsertBookmarkedAyah = z.infer<typeof insertBookmarkedAyahSchema>;
+
+// Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  preferences: many(userPreferences),
+  sessions: many(recitationSessions),
+  bookmarks: many(bookmarkedAyahs),
+}));
+
+export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [userPreferences.userId],
+    references: [users.id],
+  }),
+}));
+
+export const recitationSessionsRelations = relations(recitationSessions, ({ one }) => ({
+  user: one(users, {
+    fields: [recitationSessions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const bookmarkedAyahsRelations = relations(bookmarkedAyahs, ({ one }) => ({
+  user: one(users, {
+    fields: [bookmarkedAyahs.userId],
+    references: [users.id],
+  }),
+}));
 
 // Quran data types
 export interface Surah {

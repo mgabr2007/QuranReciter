@@ -14,6 +14,8 @@ import {
   type Surah,
   type Ayah
 } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 
@@ -40,27 +42,10 @@ export interface IStorage {
   getAyah(surahId: number, ayahNumber: number): Promise<Ayah | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private userPreferences: Map<number, UserPreferences>;
-  private recitationSessions: Map<number, RecitationSession>;
-  private bookmarkedAyahs: Map<number, BookmarkedAyah>;
-  private currentUserId: number;
-  private currentPreferencesId: number;
-  private currentSessionId: number;
-  private currentBookmarkId: number;
+export class DatabaseStorage implements IStorage {
   private quranData: any;
 
   constructor() {
-    this.users = new Map();
-    this.userPreferences = new Map();
-    this.recitationSessions = new Map();
-    this.bookmarkedAyahs = new Map();
-    this.currentUserId = 1;
-    this.currentPreferencesId = 1;
-    this.currentSessionId = 1;
-    this.currentBookmarkId = 1;
-    
     // Load Quran data
     try {
       const dataPath = path.resolve(import.meta.dirname, "data", "surahs.json");
@@ -73,93 +58,105 @@ export class MemStorage implements IStorage {
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
 
   async getUserPreferences(userId: number): Promise<UserPreferences | undefined> {
-    return Array.from(this.userPreferences.values()).find(
-      (pref) => pref.userId === userId,
-    );
+    const [preferences] = await db
+      .select()
+      .from(userPreferences)
+      .where(eq(userPreferences.userId, userId));
+    return preferences || undefined;
   }
 
   async createUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences> {
-    const id = this.currentPreferencesId++;
-    const userPrefs: UserPreferences = { ...preferences, id };
-    this.userPreferences.set(id, userPrefs);
+    const [userPrefs] = await db
+      .insert(userPreferences)
+      .values(preferences)
+      .returning();
     return userPrefs;
   }
 
   async updateUserPreferences(userId: number, updates: Partial<InsertUserPreferences>): Promise<UserPreferences> {
-    const existing = await this.getUserPreferences(userId);
-    if (!existing) {
+    const [updated] = await db
+      .update(userPreferences)
+      .set(updates)
+      .where(eq(userPreferences.userId, userId))
+      .returning();
+    
+    if (!updated) {
       throw new Error("User preferences not found");
     }
     
-    const updated: UserPreferences = { ...existing, ...updates };
-    this.userPreferences.set(existing.id, updated);
     return updated;
   }
 
   async createRecitationSession(session: InsertRecitationSession): Promise<RecitationSession> {
-    const id = this.currentSessionId++;
-    const newSession: RecitationSession = { 
-      ...session, 
-      id,
-      createdAt: new Date().toISOString()
-    };
-    this.recitationSessions.set(id, newSession);
+    const [newSession] = await db
+      .insert(recitationSessions)
+      .values({
+        ...session,
+        createdAt: new Date().toISOString()
+      })
+      .returning();
     return newSession;
   }
 
   async updateRecitationSession(id: number, updates: Partial<InsertRecitationSession>): Promise<RecitationSession> {
-    const existing = this.recitationSessions.get(id);
-    if (!existing) {
+    const [updated] = await db
+      .update(recitationSessions)
+      .set(updates)
+      .where(eq(recitationSessions.id, id))
+      .returning();
+    
+    if (!updated) {
       throw new Error("Session not found");
     }
     
-    const updated: RecitationSession = { ...existing, ...updates };
-    this.recitationSessions.set(id, updated);
     return updated;
   }
 
   async getUserSessions(userId: number): Promise<RecitationSession[]> {
-    return Array.from(this.recitationSessions.values()).filter(
-      (session) => session.userId === userId,
-    );
+    return await db
+      .select()
+      .from(recitationSessions)
+      .where(eq(recitationSessions.userId, userId));
   }
 
   async createBookmark(bookmark: InsertBookmarkedAyah): Promise<BookmarkedAyah> {
-    const id = this.currentBookmarkId++;
-    const newBookmark: BookmarkedAyah = { 
-      ...bookmark, 
-      id,
-      createdAt: new Date().toISOString()
-    };
-    this.bookmarkedAyahs.set(id, newBookmark);
+    const [newBookmark] = await db
+      .insert(bookmarkedAyahs)
+      .values({
+        ...bookmark,
+        createdAt: new Date().toISOString()
+      })
+      .returning();
     return newBookmark;
   }
 
   async getUserBookmarks(userId: number): Promise<BookmarkedAyah[]> {
-    return Array.from(this.bookmarkedAyahs.values()).filter(
-      (bookmark) => bookmark.userId === userId,
-    );
+    return await db
+      .select()
+      .from(bookmarkedAyahs)
+      .where(eq(bookmarkedAyahs.userId, userId));
   }
 
   async deleteBookmark(id: number): Promise<void> {
-    this.bookmarkedAyahs.delete(id);
+    await db.delete(bookmarkedAyahs).where(eq(bookmarkedAyahs.id, id));
   }
 
   async getSurahs(): Promise<Surah[]> {
@@ -180,4 +177,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
