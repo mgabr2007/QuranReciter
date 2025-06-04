@@ -17,6 +17,7 @@ interface AudioPlayerState {
   isPaused: boolean;
   isLoading: boolean;
   error: string | null;
+  sessionCompleted: boolean;
 }
 
 export const useAudioPlayer = ({
@@ -34,6 +35,7 @@ export const useAudioPlayer = ({
     isPaused: false,
     isLoading: false,
     error: null,
+    sessionCompleted: false,
   });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -78,9 +80,16 @@ export const useAudioPlayer = ({
     const nextIndex = state.currentAyahIndex + 1;
     
     if (nextIndex >= ayahs.length) {
-      // Session complete
-      setState(prev => ({ ...prev, isPlaying: false, currentAyahIndex: 0 }));
-      onSessionComplete?.();
+      // Session complete - only call once
+      setState(prev => ({ 
+        ...prev, 
+        isPlaying: false, 
+        currentAyahIndex: 0,
+        sessionCompleted: true 
+      }));
+      if (!state.sessionCompleted) {
+        onSessionComplete?.();
+      }
       return;
     }
 
@@ -92,7 +101,7 @@ export const useAudioPlayer = ({
       setState(prev => ({ ...prev, isPaused: false }));
       loadAyah(nextIndex);
     }, pauseDuration * 1000);
-  }, [state.currentAyahIndex, ayahs.length, pauseDuration, onAyahChange, onSessionComplete, loadAyah]);
+  }, [state.currentAyahIndex, state.sessionCompleted, ayahs.length, pauseDuration, onAyahChange, onSessionComplete, loadAyah]);
 
   const play = useCallback(() => {
     setState(prev => ({ ...prev, isPlaying: true }));
@@ -114,7 +123,8 @@ export const useAudioPlayer = ({
       isPlaying: false, 
       currentAyahIndex: 0,
       currentTime: 0,
-      isPaused: false 
+      isPaused: false,
+      sessionCompleted: false 
     }));
     clearPauseTimeout();
   }, [clearPauseTimeout]);
@@ -125,7 +135,8 @@ export const useAudioPlayer = ({
         ...prev, 
         currentAyahIndex: ayahIndex,
         currentTime: 0,
-        isPaused: false 
+        isPaused: false,
+        sessionCompleted: false 
       }));
       clearPauseTimeout();
       onAyahChange?.(ayahIndex);
