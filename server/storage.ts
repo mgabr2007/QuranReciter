@@ -31,6 +31,15 @@ export interface IStorage {
   createRecitationSession(session: InsertRecitationSession): Promise<RecitationSession>;
   updateRecitationSession(id: number, updates: Partial<InsertRecitationSession>): Promise<RecitationSession>;
   getUserSessions(userId: number): Promise<RecitationSession[]>;
+  getSessionStats(userId: number): Promise<{
+    totalSessions: number;
+    totalTime: number;
+    totalAyahs: number;
+    completedSessions: number;
+    averageSessionTime: number;
+    mostListenedSurah: string;
+    weeklyProgress: number[];
+  }>;
   
   createBookmark(bookmark: InsertBookmarkedAyah): Promise<BookmarkedAyah>;
   getUserBookmarks(userId: number): Promise<BookmarkedAyah[]>;
@@ -134,7 +143,73 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(recitationSessions)
-      .where(eq(recitationSessions.userId, userId));
+      .where(eq(recitationSessions.userId, userId))
+      .orderBy(desc(recitationSessions.id));
+  }
+
+  async getSessionStats(userId: number): Promise<{
+    totalSessions: number;
+    totalTime: number;
+    totalAyahs: number;
+    completedSessions: number;
+    averageSessionTime: number;
+    mostListenedSurah: string;
+    weeklyProgress: number[];
+  }> {
+    const sessions = await db.select().from(recitationSessions).where(eq(recitationSessions.userId, userId));
+    
+    if (sessions.length === 0) {
+      return {
+        totalSessions: 0,
+        totalTime: 0,
+        totalAyahs: 0,
+        completedSessions: 0,
+        averageSessionTime: 0,
+        mostListenedSurah: "None",
+        weeklyProgress: [0, 0, 0, 0, 0, 0, 0]
+      };
+    }
+
+    const totalSessions = sessions.length;
+    const totalTime = sessions.reduce((sum, session) => sum + session.sessionTime, 0);
+    const totalAyahs = sessions.reduce((sum, session) => sum + session.completedAyahs, 0);
+    const completedSessions = sessions.filter(session => session.isCompleted).length;
+    const averageSessionTime = totalSessions > 0 ? Math.round(totalTime / totalSessions) : 0;
+
+    // Find most listened surah
+    const surahCounts: Record<string, number> = {};
+    sessions.forEach(session => {
+      surahCounts[session.surahName] = (surahCounts[session.surahName] || 0) + 1;
+    });
+    
+    const mostListenedSurah = Object.keys(surahCounts).reduce((a, b) => 
+      surahCounts[a] > surahCounts[b] ? a : b, "None"
+    );
+
+    // Calculate weekly progress (last 7 days)
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    
+    const weeklyProgress = Array(7).fill(0);
+    sessions.forEach(session => {
+      const sessionDate = new Date(session.createdAt);
+      if (sessionDate >= oneWeekAgo) {
+        const dayIndex = Math.floor((Date.now() - sessionDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (dayIndex >= 0 && dayIndex < 7) {
+          weeklyProgress[6 - dayIndex] += session.sessionTime;
+        }
+      }
+    });
+
+    return {
+      totalSessions,
+      totalTime,
+      totalAyahs,
+      completedSessions,
+      averageSessionTime,
+      mostListenedSurah,
+      weeklyProgress
+    };
   }
 
   async createBookmark(bookmark: InsertBookmarkedAyah): Promise<BookmarkedAyah> {

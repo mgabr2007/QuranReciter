@@ -22,10 +22,14 @@ export const recitationSessions = pgTable("recitation_sessions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
   surahId: integer("surah_id").notNull(),
+  surahName: text("surah_name").notNull(),
   startAyah: integer("start_ayah").notNull(),
   endAyah: integer("end_ayah").notNull(),
   completedAyahs: integer("completed_ayahs").notNull().default(0),
   sessionTime: integer("session_time").notNull().default(0), // in seconds
+  pauseDuration: integer("pause_duration").notNull().default(5),
+  isCompleted: boolean("is_completed").notNull().default(false),
+  reciterName: text("reciter_name").default("Al-Afasy"),
   createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
 });
 

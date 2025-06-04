@@ -126,6 +126,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/sessions/stats/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const stats = await storage.getSessionStats(userId);
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch session stats" });
+    }
+  });
+
   // Bookmark routes
   app.post("/api/bookmarks", async (req, res) => {
     try {
