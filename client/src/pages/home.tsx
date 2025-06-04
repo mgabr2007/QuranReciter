@@ -270,7 +270,7 @@ export default function Home() {
           isLoading={audioPlayer.isLoading}
           currentTime={audioPlayer.currentTime}
           duration={audioPlayer.duration}
-          progress={audioPlayer.getProgress()}
+          progress={audioPlayer.progress}
           pauseDuration={pauseDuration}
           surahName={currentSurah ? getSurahDisplayName(currentSurah) : ""}
           currentAyahNumber={audioPlayer.currentAyah?.number || 1}

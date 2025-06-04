@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Ayah } from "@shared/schema";
-import { createAudioUrl, createAlternativeAudioUrl } from "@/lib/quran-data";
+import { getAyahAudio, getAlternativeAyahAudio } from "@/lib/audio-api";
 
 interface UseAudioPlayerProps {
   ayahs: Ayah[];
@@ -52,199 +52,153 @@ export const useAudioPlayer = ({
     }
   }, []);
 
+  const tryLoadAudio = useCallback(async (url: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (!audioRef.current) {
+        resolve(false);
+        return;
+      }
+
+      const audio = audioRef.current;
+      
+      const cleanup = () => {
+        audio.removeEventListener('canplay', onCanPlay);
+        audio.removeEventListener('error', onError);
+        audio.removeEventListener('loadstart', onLoadStart);
+      };
+
+      const onCanPlay = () => {
+        console.log('Audio loaded successfully:', url);
+        cleanup();
+        setState(prev => ({ 
+          ...prev, 
+          isLoading: false, 
+          duration: audio.duration || 10 
+        }));
+        
+        // Test audio playback capability
+        audio.volume = 0.5;
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+            console.log('Audio playback test successful');
+          }).catch(error => {
+            console.warn('Audio autoplay blocked:', error.message);
+          });
+        }
+        
+        resolve(true);
+      };
+      
+      const onError = () => {
+        console.warn('Failed to load audio from:', url);
+        cleanup();
+        resolve(false);
+      };
+
+      const onLoadStart = () => {
+        console.log('Loading audio from:', url);
+      };
+      
+      audio.addEventListener('canplay', onCanPlay);
+      audio.addEventListener('error', onError);
+      audio.addEventListener('loadstart', onLoadStart);
+      
+      audio.src = url;
+      audio.load();
+      
+      // Timeout after 8 seconds
+      setTimeout(() => {
+        cleanup();
+        resolve(false);
+      }, 8000);
+    });
+  }, []);
+
   const loadAyah = useCallback(async (ayahIndex: number) => {
     if (!ayahs[ayahIndex]) return;
 
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     const ayah = ayahs[ayahIndex];
-    const primaryUrl = createAudioUrl(ayah.surahId, ayah.number);
-    const alternativeUrl = createAlternativeAudioUrl(ayah.surahId, ayah.number);
     
-    const tryLoadAudio = async (url: string): Promise<boolean> => {
-      return new Promise((resolve) => {
-        if (!audioRef.current) {
-          resolve(false);
-          return;
-        }
-
-        const audio = audioRef.current;
-        
-        const cleanup = () => {
-          audio.removeEventListener('canplay', onCanPlay);
-          audio.removeEventListener('error', onError);
-          audio.removeEventListener('loadstart', onLoadStart);
-        };
-
-        const onCanPlay = () => {
-          console.log('Audio loaded successfully:', url);
-          cleanup();
-          setState(prev => ({ 
-            ...prev, 
-            isLoading: false, 
-            duration: audio.duration || 10 
-          }));
-          
-          // Test audio playback capability
-          audio.volume = 0.1;
-          const playPromise = audio.play();
-          if (playPromise !== undefined) {
-            playPromise.then(() => {
-              audio.pause();
-              audio.currentTime = 0;
-              console.log('Audio playback test successful');
-            }).catch(error => {
-              console.warn('Audio autoplay blocked:', error.message);
-            });
-          }
-          
-          resolve(true);
-        };
-        
-        const onError = () => {
-          console.warn('Failed to load audio from:', url);
-          cleanup();
-          resolve(false);
-        };
-
-        const onLoadStart = () => {
-          console.log('Loading audio from:', url);
-        };
-        
-        audio.addEventListener('canplay', onCanPlay);
-        audio.addEventListener('error', onError);
-        audio.addEventListener('loadstart', onLoadStart);
-        
-        audio.src = url;
-        audio.load();
-        
-        // Timeout after 8 seconds
-        setTimeout(() => {
-          cleanup();
-          resolve(false);
-        }, 8000);
-      });
-    };
-
     try {
-      // Try primary source first
-      const primarySuccess = await tryLoadAudio(primaryUrl);
+      console.log(`Loading audio for Surah ${ayah.surahId}, Ayah ${ayah.number}`);
+      const primaryUrl = await getAyahAudio(ayah.surahId, ayah.number);
+      console.log('Primary audio URL:', primaryUrl);
       
-      if (!primarySuccess) {
-        console.log('Trying alternative audio source...');
-        const alternativeSuccess = await tryLoadAudio(alternativeUrl);
-        
-        if (!alternativeSuccess) {
-          setState(prev => ({ 
-            ...prev, 
-            isLoading: false, 
-            error: 'Audio temporarily unavailable. Please try again later.' 
-          }));
-        }
+      const success = await tryLoadAudio(primaryUrl);
+      if (success) return;
+      
+      console.log('Primary failed, trying alternative...');
+      const alternativeUrl = await getAlternativeAyahAudio(ayah.surahId, ayah.number);
+      console.log('Alternative audio URL:', alternativeUrl);
+      
+      const alternativeSuccess = await tryLoadAudio(alternativeUrl);
+      if (!alternativeSuccess) {
+        throw new Error('Both audio sources failed to load');
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Failed to load audio:', error);
       setState(prev => ({ 
         ...prev, 
         isLoading: false, 
-        error: 'Failed to load audio. Please check your internet connection.' 
+        error: `Failed to load audio: ${error.message}` 
       }));
     }
-  }, [ayahs]);
+  }, [ayahs, tryLoadAudio]);
 
   const playNextAyah = useCallback(() => {
-    const nextIndex = state.currentAyahIndex + 1;
-    
-    if (nextIndex >= ayahs.length) {
-      // Session complete - only call once
-      setState(prev => ({ 
-        ...prev, 
-        isPlaying: false, 
-        currentAyahIndex: 0,
-        sessionCompleted: true 
-      }));
-      if (!state.sessionCompleted) {
-        onSessionComplete?.();
+    if (!ayahs.length) return;
+
+    setState(prev => ({ ...prev, isPlaying: false }));
+    startTimeRef.current = Date.now();
+
+    if (currentAyah) {
+      loadAyah(state.currentAyahIndex);
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        setState(prev => ({ ...prev, currentTime: 0 }));
       }
+    }
+  }, [ayahs, currentAyah, state.currentAyahIndex, loadAyah]);
+
+  const nextAyah = useCallback(() => {
+    if (!currentAyah || state.currentAyahIndex >= ayahs.length - 1) {
+      loadAyah(state.currentAyahIndex);
       return;
     }
 
-    setState(prev => ({ ...prev, currentAyahIndex: nextIndex, isPaused: true }));
-    onAyahChange?.(nextIndex);
-    
-    // Start pause between ayahs
-    pauseTimeoutRef.current = setTimeout(() => {
-      setState(prev => ({ ...prev, isPaused: false }));
-      loadAyah(nextIndex);
-    }, pauseDuration * 1000);
-  }, [state.currentAyahIndex, state.sessionCompleted, ayahs.length, pauseDuration, onAyahChange, onSessionComplete, loadAyah]);
-
-  const play = useCallback(async () => {
-    setState(prev => ({ ...prev, isPlaying: true }));
-    startTimeRef.current = Date.now();
-    
-    if (currentAyah) {
-      await loadAyah(state.currentAyahIndex);
-      if (audioRef.current) {
-        try {
-          await audioRef.current.play();
-        } catch (error) {
-          setState(prev => ({ 
-            ...prev, 
-            isPlaying: false, 
-            error: 'Failed to play audio. Please try again.' 
-          }));
-        }
-      }
-    }
-  }, [currentAyah, state.currentAyahIndex, loadAyah]);
-
-  const pause = useCallback(() => {
-    setState(prev => ({ ...prev, isPlaying: false }));
+    setState(prev => ({ ...prev, currentAyahIndex: prev.currentAyahIndex + 1 }));
     if (audioRef.current) {
       audioRef.current.pause();
     }
     clearPauseTimeout();
-  }, [clearPauseTimeout]);
-
-  const stop = useCallback(() => {
-    setState(prev => ({ 
-      ...prev, 
-      isPlaying: false, 
-      currentAyahIndex: 0,
-      currentTime: 0,
-      isPaused: false,
-      sessionCompleted: false 
-    }));
-    clearPauseTimeout();
-  }, [clearPauseTimeout]);
-
-  const skipToAyah = useCallback((ayahIndex: number) => {
-    if (ayahIndex >= 0 && ayahIndex < ayahs.length) {
-      setState(prev => ({ 
-        ...prev, 
-        currentAyahIndex: ayahIndex,
-        currentTime: 0,
-        isPaused: false,
-        sessionCompleted: false 
-      }));
-      clearPauseTimeout();
-      onAyahChange?.(ayahIndex);
-      
-      if (state.isPlaying) {
-        loadAyah(ayahIndex);
-      }
-    }
-  }, [ayahs.length, state.isPlaying, clearPauseTimeout, onAyahChange, loadAyah]);
+  }, [currentAyah, state.currentAyahIndex, ayahs.length, loadAyah, clearPauseTimeout]);
 
   const previousAyah = useCallback(() => {
-    const prevIndex = Math.max(0, state.currentAyahIndex - 1);
-    skipToAyah(prevIndex);
-  }, [state.currentAyahIndex, skipToAyah]);
+    setState(prev => ({ 
+      ...prev, 
+      currentAyahIndex: Math.max(0, prev.currentAyahIndex - 1) 
+    }));
+  }, []);
 
-  const nextAyah = useCallback(() => {
-    const nextIndex = Math.min(ayahs.length - 1, state.currentAyahIndex + 1);
-    skipToAyah(nextIndex);
-  }, [state.currentAyahIndex, ayahs.length, skipToAyah]);
+  const rewind = useCallback(() => {
+    clearPauseTimeout();
+    onAyahChange?.(state.currentAyahIndex);
+    
+    if (state.currentAyahIndex > 0) {
+      loadAyah(state.currentAyahIndex - 1);
+    }
+  }, [state.currentAyahIndex, clearPauseTimeout, onAyahChange, loadAyah]);
+
+  const forward = useCallback(() => {
+    if (state.currentAyahIndex < ayahs.length - 1) {
+      setState(prev => ({ ...prev, currentAyahIndex: prev.currentAyahIndex + 1 }));
+    }
+  }, [state.currentAyahIndex, ayahs.length]);
 
   const seek = useCallback((time: number) => {
     if (audioRef.current) {
@@ -253,98 +207,159 @@ export const useAudioPlayer = ({
     }
   }, []);
 
-  const repeatCurrent = useCallback(async () => {
+  const progress = state.duration > 0 ? (state.currentTime / state.duration) * 100 : 0;
+
+  const play = useCallback(() => {
+    if (audioRef.current && !state.isLoading) {
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          setState(prev => ({ ...prev, isPlaying: true, isPaused: false }));
+        }).catch(error => {
+          console.error('Failed to play audio:', error);
+          setState(prev => ({ ...prev, error: 'Failed to play audio' }));
+        });
+      }
+    }
+  }, [state.isLoading]);
+
+  const pause = useCallback(() => {
     if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-      setState(prev => ({ ...prev, currentTime: 0 }));
-      if (state.isPlaying) {
-        try {
-          await audioRef.current.play();
-        } catch (error) {
-          setState(prev => ({ 
-            ...prev, 
-            error: 'Failed to repeat audio. Please try again.' 
-          }));
-        }
-      }
+      audioRef.current.pause();
+      setState(prev => ({ ...prev, isPlaying: false, isPaused: true }));
     }
-  }, [state.isPlaying]);
-
-  // Real audio progress tracking
-  useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.crossOrigin = "anonymous";
-    }
-
-    const audio = audioRef.current;
-
-    const updateTime = () => {
-      setState(prev => ({ ...prev, currentTime: audio.currentTime }));
-    };
-
-    const onEnded = () => {
-      if (autoRepeat) {
-        audio.currentTime = 0;
-        audio.play();
-      } else {
-        playNextAyah();
-      }
-    };
-
-    const onLoadedMetadata = () => {
-      setState(prev => ({ ...prev, duration: audio.duration }));
-    };
-
-    audio.addEventListener('timeupdate', updateTime);
-    audio.addEventListener('ended', onEnded);
-    audio.addEventListener('loadedmetadata', onLoadedMetadata);
-
-    return () => {
-      audio.removeEventListener('timeupdate', updateTime);
-      audio.removeEventListener('ended', onEnded);
-      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
-    };
-  }, [autoRepeat, playNextAyah]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      clearPauseTimeout();
-    };
+    clearPauseTimeout();
   }, [clearPauseTimeout]);
 
-  const getSessionTime = useCallback(() => {
-    return Math.floor((Date.now() - startTimeRef.current) / 1000);
-  }, []);
+  const repeat = useCallback(() => {
+    if (autoRepeat && state.currentAyahIndex === ayahs.length - 1) {
+      setState(prev => ({ 
+        ...prev, 
+        currentAyahIndex: 0, 
+        sessionCompleted: false 
+      }));
+      onSessionComplete?.();
+    }
+  }, [autoRepeat, state.currentAyahIndex, ayahs.length, onSessionComplete]);
+
+  const stop = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setState(prev => ({ 
+      ...prev, 
+      isPlaying: false, 
+      isPaused: false, 
+      currentTime: 0 
+    }));
+    clearPauseTimeout();
+  }, [clearPauseTimeout]);
+
+  const skipToAyah = useCallback((ayahIndex: number) => {
+    if (ayahIndex >= 0 && ayahIndex < ayahs.length) {
+      setState(prev => ({ ...prev, currentAyahIndex: ayahIndex }));
+      loadAyah(ayahIndex);
+    }
+  }, [ayahs.length, loadAyah]);
 
   const getCompletedAyahs = useCallback(() => {
     return state.currentAyahIndex;
   }, [state.currentAyahIndex]);
 
-  const getRemainingAyahs = useCallback(() => {
-    return ayahs.length - state.currentAyahIndex;
-  }, [ayahs.length, state.currentAyahIndex]);
+  // Initialize audio element
+  useEffect(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.preload = 'auto';
+    }
 
-  const getProgress = useCallback(() => {
-    if (state.duration === 0) return 0;
-    return (state.currentTime / state.duration) * 100;
-  }, [state.currentTime, state.duration]);
+    const audio = audioRef.current;
+
+    const handleTimeUpdate = () => {
+      setState(prev => ({ ...prev, currentTime: audio.currentTime }));
+    };
+
+    const handleLoadedMetadata = () => {
+      setState(prev => ({ ...prev, duration: audio.duration }));
+    };
+
+    const handleEnded = () => {
+      setState(prev => ({ ...prev, isPlaying: false }));
+      
+      if (state.currentAyahIndex < ayahs.length - 1) {
+        setState(prev => ({ ...prev, isPaused: true }));
+        onAyahChange?.(state.currentAyahIndex + 1);
+        
+        pauseTimeoutRef.current = setTimeout(() => {
+          setState(prev => ({ ...prev, currentAyahIndex: prev.currentAyahIndex + 1 }));
+          loadAyah(state.currentAyahIndex + 1);
+        }, pauseDuration * 1000);
+      } else {
+        setState(prev => ({ ...prev, sessionCompleted: true }));
+        onSessionComplete?.();
+      }
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('ended', handleEnded);
+      clearPauseTimeout();
+    };
+  }, [
+    state.currentAyahIndex, 
+    ayahs.length, 
+    pauseDuration, 
+    onAyahChange, 
+    onSessionComplete, 
+    loadAyah, 
+    clearPauseTimeout
+  ]);
+
+  // Load first ayah on mount
+  useEffect(() => {
+    if (ayahs.length > 0 && !currentAyah) {
+      loadAyah(0);
+    }
+  }, [ayahs, currentAyah, loadAyah]);
 
   return {
-    ...state,
+    // State
+    isPlaying: state.isPlaying,
+    isPaused: state.isPaused,
+    isLoading: state.isLoading,
+    currentTime: state.currentTime,
+    duration: state.duration,
+    progress,
+    error: state.error,
     currentAyah,
+    currentAyahIndex: state.currentAyahIndex,
+    sessionCompleted: state.sessionCompleted,
+    
+    // Actions
     play,
     pause,
     stop,
-    skipToAyah,
-    previousAyah,
     nextAyah,
+    previousAyah,
+    rewind,
+    forward,
     seek,
-    repeatCurrent,
-    getSessionTime,
+    repeat,
+    skipToAyah,
     getCompletedAyahs,
-    getRemainingAyahs,
-    getProgress,
+    getRemainingAyahs: () => ayahs.length - state.currentAyahIndex - 1,
+    getSessionTime: () => Math.floor((Date.now() - startTimeRef.current) / 1000),
+    repeatCurrent: () => {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        play();
+      }
+    }
   };
 };
