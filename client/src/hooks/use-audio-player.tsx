@@ -76,18 +76,9 @@ export const useAudioPlayer = ({
           duration: audio.duration || 10 
         }));
         
-        // Test audio playback capability
-        audio.volume = 0.5;
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-          playPromise.then(() => {
-            audio.pause();
-            audio.currentTime = 0;
-            console.log('Audio playback test successful');
-          }).catch(error => {
-            console.warn('Audio autoplay blocked:', error.message);
-          });
-        }
+        // Set volume and prepare for user interaction
+        audio.volume = 0.7;
+        console.log('Audio ready for user interaction');
         
         resolve(true);
       };
@@ -211,15 +202,33 @@ export const useAudioPlayer = ({
 
   const play = useCallback(() => {
     if (audioRef.current && !state.isLoading) {
-      const playPromise = audioRef.current.play();
+      console.log('Attempting to play audio:', audioRef.current.src);
+      
+      const audio = audioRef.current;
+      
+      // Reset any previous errors
+      setState(prev => ({ ...prev, error: null }));
+      
+      const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise.then(() => {
+          console.log('Audio playback started successfully');
           setState(prev => ({ ...prev, isPlaying: true, isPaused: false }));
         }).catch(error => {
           console.error('Failed to play audio:', error);
-          setState(prev => ({ ...prev, error: 'Failed to play audio' }));
+          setState(prev => ({ 
+            ...prev, 
+            error: `Playback failed: ${error.message}. Try clicking play again.` 
+          }));
         });
+      } else {
+        // For older browsers
+        setState(prev => ({ ...prev, isPlaying: true, isPaused: false }));
       }
+    } else if (state.isLoading) {
+      setState(prev => ({ ...prev, error: 'Audio is still loading, please wait...' }));
+    } else {
+      setState(prev => ({ ...prev, error: 'No audio loaded. Please select a different verse.' }));
     }
   }, [state.isLoading]);
 
