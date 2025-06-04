@@ -356,22 +356,42 @@ export class DatabaseStorage implements IStorage {
       }
 
       try {
-        const primaryUrl = `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${surahId}${ayahNumber.toString().padStart(3, '0')}.mp3`;
-        const alternativeUrl = `https://everyayah.com/data/Alafasy_128kbps/${surahId.toString().padStart(3, '0')}${ayahNumber.toString().padStart(3, '0')}.mp3`;
+        // Primary: Direct MP3 files from Islamic Network
+        const primaryUrl = `https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/${surahId.toString().padStart(3, '0')}${ayahNumber.toString().padStart(3, '0')}.mp3`;
+        // Alternative: Standard Islamic Network format  
+        const alternativeUrl = `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${surahId}${ayahNumber.toString().padStart(3, '0')}.mp3`;
+        // Backup: EveryAyah format
+        const backupUrl = `https://everyayah.com/data/Alafasy_128kbps/${surahId.toString().padStart(3, '0')}${ayahNumber.toString().padStart(3, '0')}.mp3`;
 
         // Test if URLs are accessible
         const primaryResponse = await fetch(primaryUrl, { method: 'HEAD' });
         const isVerified = primaryResponse.ok;
 
+        // Try alternative URL if primary fails
+        let finalUrl = primaryUrl;
+        let finalVerified = isVerified;
+        
+        if (!isVerified) {
+          try {
+            const altResponse = await fetch(alternativeUrl, { method: 'HEAD' });
+            if (altResponse.ok) {
+              finalUrl = alternativeUrl;
+              finalVerified = true;
+            }
+          } catch (error) {
+            console.warn(`Alternative URL also failed for Surah ${surahId}, Ayah ${ayahNumber}`);
+          }
+        }
+
         await this.createCachedAudioFile({
           surahId,
           ayahNumber,
           reciterName: "al-afasy",
-          audioUrl: primaryUrl,
-          alternativeUrl,
-          isVerified,
+          audioUrl: finalUrl,
+          alternativeUrl: finalVerified ? alternativeUrl : backupUrl,
+          isVerified: finalVerified,
           duration: null,
-          fileSize: primaryResponse.ok ? parseInt(primaryResponse.headers.get('content-length') || '0') : null
+          fileSize: finalVerified ? parseInt((await fetch(finalUrl, { method: 'HEAD' })).headers.get('content-length') || '0') : null
         });
 
         console.log(`Cached audio for Surah ${surahId}, Ayah ${ayahNumber}`);
