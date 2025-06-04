@@ -26,6 +26,7 @@ export default function Home() {
   const [autoRepeat, setAutoRepeat] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [showTranslation, setShowTranslation] = useState(true);
 
   // Load user preferences
   const { data: preferences } = useQuery<UserPreferences>({
