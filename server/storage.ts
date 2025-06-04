@@ -15,7 +15,7 @@ import {
   type Ayah
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 
@@ -144,7 +144,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(recitationSessions)
       .where(eq(recitationSessions.userId, userId))
-      .orderBy(desc(recitationSessions.id));
+      .orderBy(recitationSessions.id);
   }
 
   async getSessionStats(userId: number): Promise<{
