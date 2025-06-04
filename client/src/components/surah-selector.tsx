@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,8 +20,17 @@ export const SurahSelector = ({
   endAyah,
   onSelectionChange,
 }: SurahSelectorProps) => {
-  const { data: surahs = [], isLoading, error } = useQuery<Surah[]>({
+  const queryClient = useQueryClient();
+  
+  useEffect(() => {
+    // Force refresh of surahs data on component mount
+    queryClient.invalidateQueries({ queryKey: ["/api/surahs"] });
+  }, [queryClient]);
+
+  const { data: surahs = [], isLoading, error, refetch } = useQuery<Surah[]>({
     queryKey: ["/api/surahs"],
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   console.log('SurahSelector data:', { 
@@ -94,14 +103,18 @@ export const SurahSelector = ({
             </Label>
             <Select value={selectedSurah.toString()} onValueChange={handleSurahChange}>
               <SelectTrigger className="w-full focus:ring-2 focus:ring-islamic-green focus:border-transparent">
-                <SelectValue placeholder="Select a Surah" />
+                <SelectValue placeholder={surahs.length > 0 ? "Select a Surah" : "Loading surahs..."} />
               </SelectTrigger>
               <SelectContent>
-                {surahs.map((surah) => (
-                  <SelectItem key={surah.id} value={surah.id.toString()}>
-                    {getSurahDisplayName(surah)}
-                  </SelectItem>
-                ))}
+                {surahs.length > 0 ? (
+                  surahs.map((surah) => (
+                    <SelectItem key={surah.id} value={surah.id.toString()}>
+                      {getSurahDisplayName(surah)}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="loading" disabled>Loading surahs...</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
