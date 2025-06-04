@@ -42,6 +42,20 @@ export const bookmarkedAyahs = pgTable("bookmarked_ayahs", {
   createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
 });
 
+export const cachedAudioFiles = pgTable("cached_audio_files", {
+  id: serial("id").primaryKey(),
+  surahId: integer("surah_id").notNull(),
+  ayahNumber: integer("ayah_number").notNull(),
+  reciterName: text("reciter_name").notNull().default("al-afasy"),
+  audioUrl: text("audio_url").notNull(),
+  alternativeUrl: text("alternative_url"),
+  duration: integer("duration"), // in seconds
+  fileSize: integer("file_size"), // in bytes
+  isVerified: boolean("is_verified").notNull().default(false),
+  lastChecked: text("last_checked").notNull().default("CURRENT_TIMESTAMP"),
+  createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -61,6 +75,12 @@ export const insertBookmarkedAyahSchema = createInsertSchema(bookmarkedAyahs).om
   createdAt: true,
 });
 
+export const insertCachedAudioFileSchema = createInsertSchema(cachedAudioFiles).omit({
+  id: true,
+  createdAt: true,
+  lastChecked: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type UserPreferences = typeof userPreferences.$inferSelect;
@@ -69,6 +89,8 @@ export type RecitationSession = typeof recitationSessions.$inferSelect;
 export type InsertRecitationSession = z.infer<typeof insertRecitationSessionSchema>;
 export type BookmarkedAyah = typeof bookmarkedAyahs.$inferSelect;
 export type InsertBookmarkedAyah = z.infer<typeof insertBookmarkedAyahSchema>;
+export type CachedAudioFile = typeof cachedAudioFiles.$inferSelect;
+export type InsertCachedAudioFile = z.infer<typeof insertCachedAudioFileSchema>;
 
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
@@ -96,6 +118,10 @@ export const bookmarkedAyahsRelations = relations(bookmarkedAyahs, ({ one }) => 
     fields: [bookmarkedAyahs.userId],
     references: [users.id],
   }),
+}));
+
+export const cachedAudioFilesRelations = relations(cachedAudioFiles, ({ one }) => ({
+  // No direct relation to users since audio files are shared across all users
 }));
 
 // Quran data types

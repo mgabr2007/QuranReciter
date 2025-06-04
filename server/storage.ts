@@ -3,6 +3,7 @@ import {
   userPreferences, 
   recitationSessions, 
   bookmarkedAyahs,
+  cachedAudioFiles,
   type User, 
   type InsertUser,
   type UserPreferences,
@@ -11,6 +12,8 @@ import {
   type InsertRecitationSession,
   type BookmarkedAyah,
   type InsertBookmarkedAyah,
+  type CachedAudioFile,
+  type InsertCachedAudioFile,
   type Surah,
   type Ayah
 } from "@shared/schema";
@@ -49,6 +52,11 @@ export interface IStorage {
   getSurah(id: number): Promise<Surah | undefined>;
   getAyahs(surahId: number): Promise<Ayah[]>;
   getAyah(surahId: number, ayahNumber: number): Promise<Ayah | undefined>;
+  
+  getCachedAudioFile(surahId: number, ayahNumber: number, reciterName?: string): Promise<CachedAudioFile | undefined>;
+  createCachedAudioFile(audioFile: InsertCachedAudioFile): Promise<CachedAudioFile>;
+  updateCachedAudioFile(id: number, updates: Partial<InsertCachedAudioFile>): Promise<CachedAudioFile>;
+  preloadAudioFiles(surahId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -294,6 +302,81 @@ export class DatabaseStorage implements IStorage {
   async getAyah(surahId: number, ayahNumber: number): Promise<Ayah | undefined> {
     const ayahs = await this.getAyahs(surahId);
     return ayahs.find((ayah: Ayah) => ayah.number === ayahNumber);
+  }
+
+  async getCachedAudioFile(surahId: number, ayahNumber: number, reciterName: string = "al-afasy"): Promise<CachedAudioFile | undefined> {
+    const [cachedFile] = await db
+      .select()
+      .from(cachedAudioFiles)
+      .where(eq(cachedAudioFiles.surahId, surahId))
+      .where(eq(cachedAudioFiles.ayahNumber, ayahNumber))
+      .where(eq(cachedAudioFiles.reciterName, reciterName));
+    return cachedFile;
+  }
+
+  async createCachedAudioFile(audioFile: InsertCachedAudioFile): Promise<CachedAudioFile> {
+    const [cached] = await db
+      .insert(cachedAudioFiles)
+      .values(audioFile)
+      .returning();
+    return cached;
+  }
+
+  async updateCachedAudioFile(id: number, updates: Partial<InsertCachedAudioFile>): Promise<CachedAudioFile> {
+    const [updated] = await db
+      .update(cachedAudioFiles)
+      .set(updates)
+      .where(eq(cachedAudioFiles.id, id))
+      .returning();
+    return updated;
+  }
+
+  async preloadAudioFiles(surahId: number): Promise<void> {
+    const surah = await this.getSurah(surahId);
+    if (!surah) return;
+
+    console.log(`Preloading audio files for Surah ${surahId} (${surah.name}) with ${surah.totalAyahs} ayahs`);
+
+    // Check which ayahs are already cached
+    const existingCached = await db
+      .select()
+      .from(cachedAudioFiles)
+      .where(eq(cachedAudioFiles.surahId, surahId));
+
+    const cachedAyahs = new Set(existingCached.map(c => c.ayahNumber));
+
+    // Preload missing ayahs
+    for (let ayahNumber = 1; ayahNumber <= surah.totalAyahs; ayahNumber++) {
+      if (cachedAyahs.has(ayahNumber)) {
+        continue; // Already cached
+      }
+
+      try {
+        const primaryUrl = `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${surahId}${ayahNumber.toString().padStart(3, '0')}.mp3`;
+        const alternativeUrl = `https://everyayah.com/data/Alafasy_128kbps/${surahId.toString().padStart(3, '0')}${ayahNumber.toString().padStart(3, '0')}.mp3`;
+
+        // Test if URLs are accessible
+        const primaryResponse = await fetch(primaryUrl, { method: 'HEAD' });
+        const isVerified = primaryResponse.ok;
+
+        await this.createCachedAudioFile({
+          surahId,
+          ayahNumber,
+          reciterName: "al-afasy",
+          audioUrl: primaryUrl,
+          alternativeUrl,
+          isVerified,
+          duration: null,
+          fileSize: primaryResponse.ok ? parseInt(primaryResponse.headers.get('content-length') || '0') : null
+        });
+
+        console.log(`Cached audio for Surah ${surahId}, Ayah ${ayahNumber}`);
+      } catch (error) {
+        console.warn(`Failed to cache audio for Surah ${surahId}, Ayah ${ayahNumber}:`, error);
+      }
+    }
+
+    console.log(`Completed preloading audio files for Surah ${surahId}`);
   }
 }
 
