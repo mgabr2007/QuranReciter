@@ -24,6 +24,8 @@ export const SurahSelector = ({
     queryKey: ["/api/surahs"],
   });
 
+  console.log('SurahSelector data:', { surahs: surahs.length, isLoading, error, selectedSurah });
+
   const currentSurah = surahs.find(s => s.id === selectedSurah);
 
   const handleSurahChange = (surahId: string) => {
