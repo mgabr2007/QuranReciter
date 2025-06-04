@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { BookOpen, Languages, Volume2 } from "lucide-react";
 import { getAyahTranslation, getAyahArabicText } from "@/lib/translation-api";
-import type { Ayah } from "@shared/schema";
+import { BookmarkButton } from "@/components/bookmark-button";
+import type { Ayah, BookmarkedAyah } from "@shared/schema";
 
 interface AyahDisplayProps {
   currentAyah: Ayah | null;
@@ -82,19 +84,23 @@ export const AyahDisplay = ({
             </span>
           </div>
           
-          {onTranslationToggle && (
-            <div className="flex items-center gap-2">
-              <Label htmlFor="translation-toggle" className="text-sm">
-                <Languages className="h-4 w-4 inline mr-1" />
-                Translation
-              </Label>
-              <Switch 
-                id="translation-toggle"
-                checked={showTranslation}
-                onCheckedChange={onTranslationToggle}
-              />
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            {currentAyah && <BookmarkButton ayah={currentAyah} />}
+            
+            {onTranslationToggle && (
+              <div className="flex items-center gap-2">
+                <Label htmlFor="translation-toggle" className="text-sm">
+                  <Languages className="h-4 w-4 inline mr-1" />
+                  Translation
+                </Label>
+                <Switch 
+                  id="translation-toggle"
+                  checked={showTranslation}
+                  onCheckedChange={onTranslationToggle}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Loading state */}
