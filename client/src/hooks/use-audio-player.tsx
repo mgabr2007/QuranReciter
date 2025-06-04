@@ -201,36 +201,50 @@ export const useAudioPlayer = ({
   const progress = state.duration > 0 ? (state.currentTime / state.duration) * 100 : 0;
 
   const play = useCallback(() => {
-    if (audioRef.current && !state.isLoading) {
-      console.log('Attempting to play audio:', audioRef.current.src);
-      
-      const audio = audioRef.current;
-      
-      // Reset any previous errors
-      setState(prev => ({ ...prev, error: null }));
-      
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.then(() => {
-          console.log('Audio playback started successfully');
-          setState(prev => ({ ...prev, isPlaying: true, isPaused: false }));
-        }).catch(error => {
-          console.error('Failed to play audio:', error);
-          setState(prev => ({ 
-            ...prev, 
-            error: `Playback failed: ${error.message}. Try clicking play again.` 
-          }));
-        });
+    console.log('Play button clicked. State:', { 
+      isLoading: state.isLoading, 
+      hasAudio: !!audioRef.current,
+      audioSrc: audioRef.current?.src || 'No src',
+      currentAyahIndex: state.currentAyahIndex,
+      ayahsLength: ayahs.length
+    });
+
+    if (!audioRef.current || !audioRef.current.src) {
+      console.log('No audio loaded, attempting to load first ayah');
+      if (ayahs.length > 0) {
+        loadAyah(state.currentAyahIndex);
+        setState(prev => ({ ...prev, error: 'Loading audio, please try again in a moment...' }));
+        return;
       } else {
-        // For older browsers
-        setState(prev => ({ ...prev, isPlaying: true, isPaused: false }));
+        setState(prev => ({ ...prev, error: 'No verses available to play' }));
+        return;
       }
-    } else if (state.isLoading) {
-      setState(prev => ({ ...prev, error: 'Audio is still loading, please wait...' }));
-    } else {
-      setState(prev => ({ ...prev, error: 'No audio loaded. Please select a different verse.' }));
     }
-  }, [state.isLoading]);
+
+    if (state.isLoading) {
+      setState(prev => ({ ...prev, error: 'Audio is still loading, please wait...' }));
+      return;
+    }
+
+    const audio = audioRef.current;
+    setState(prev => ({ ...prev, error: null }));
+    
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        console.log('Audio playback started successfully');
+        setState(prev => ({ ...prev, isPlaying: true, isPaused: false }));
+      }).catch(error => {
+        console.error('Failed to play audio:', error);
+        setState(prev => ({ 
+          ...prev, 
+          error: `Playback failed: ${error.message}. Click play again to retry.` 
+        }));
+      });
+    } else {
+      setState(prev => ({ ...prev, isPlaying: true, isPaused: false }));
+    }
+  }, [state.isLoading, state.currentAyahIndex, ayahs.length, loadAyah]);
 
   const pause = useCallback(() => {
     if (audioRef.current) {
@@ -332,10 +346,11 @@ export const useAudioPlayer = ({
 
   // Load first ayah on mount
   useEffect(() => {
-    if (ayahs.length > 0 && !currentAyah) {
+    if (ayahs.length > 0) {
+      console.log('Loading first ayah on mount, ayahs:', ayahs.length);
       loadAyah(0);
     }
-  }, [ayahs, currentAyah, loadAyah]);
+  }, [ayahs, loadAyah]);
 
   return {
     // State
