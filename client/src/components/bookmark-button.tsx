@@ -4,6 +4,7 @@ import { Heart, HeartHandshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { BookmarkDialog } from "@/components/bookmark-dialog";
 import type { Ayah, BookmarkedAyah } from "@shared/schema";
 
 interface BookmarkButtonProps {
@@ -104,24 +105,31 @@ export const BookmarkButton = ({
     }
   };
 
-  return (
-    <Button
-      variant={isBookmarked ? "default" : "outline"}
-      size="sm"
-      onClick={handleBookmarkToggle}
-      disabled={isLoading}
-      className={`${
-        isBookmarked 
-          ? "bg-islamic-green hover:bg-islamic-green/90 text-white" 
-          : "border-islamic-green text-islamic-green hover:bg-islamic-light"
-      } transition-colors duration-200`}
-    >
-      {isBookmarked ? (
+  if (isBookmarked) {
+    return (
+      <Button
+        variant="default"
+        size="sm"
+        onClick={handleBookmarkToggle}
+        disabled={isLoading}
+        className="bg-islamic-green hover:bg-islamic-green/90 text-white transition-colors duration-200"
+      >
         <HeartHandshake className="h-4 w-4 mr-1" />
-      ) : (
+        {isLoading ? "Removing..." : "Bookmarked"}
+      </Button>
+    );
+  }
+
+  return (
+    <BookmarkDialog ayah={ayah} isBookmarked={false}>
+      <Button
+        variant="outline"
+        size="sm"
+        className="border-islamic-green text-islamic-green hover:bg-islamic-light transition-colors duration-200"
+      >
         <Heart className="h-4 w-4 mr-1" />
-      )}
-      {isBookmarked ? "Bookmarked" : "Bookmark"}
-    </Button>
+        Bookmark
+      </Button>
+    </BookmarkDialog>
   );
 };

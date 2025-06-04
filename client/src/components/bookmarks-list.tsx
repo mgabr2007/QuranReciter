@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Trash2, Play, BookOpen, Heart } from "lucide-react";
+import { Trash2, Play, BookOpen, Heart, Search, MessageCircle, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { BookmarkedAyah, Surah } from "@shared/schema";
@@ -15,6 +18,9 @@ interface BookmarksListProps {
 
 export const BookmarksList = ({ onPlayAyah }: BookmarksListProps) => {
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [editingBookmark, setEditingBookmark] = useState<BookmarkedAyah | null>(null);
+  const [editNotes, setEditNotes] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
