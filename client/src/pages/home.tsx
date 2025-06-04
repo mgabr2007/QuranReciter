@@ -11,7 +11,7 @@ import { useAudioPlayer } from "@/hooks/use-audio-player";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Settings, History as HistoryIcon } from "lucide-react";
+import { Settings, History as HistoryIcon, Heart } from "lucide-react";
 import type { Surah, Ayah, UserPreferences, BookmarkedAyah } from "@shared/schema";
 import { getSurahDisplayName } from "@/lib/quran-data";
 
@@ -231,6 +231,12 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Link href="/bookmarks">
+                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
+                  <Heart className="h-4 w-4 mr-2" />
+                  Bookmarks
+                </Button>
+              </Link>
               <Link href="/history">
                 <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
                   <HistoryIcon className="h-4 w-4 mr-2" />
