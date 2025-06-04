@@ -703,6 +703,174 @@
         "translation": "Nor is there to Him any equivalent.\"",
         "surahId": 112
       }
+    ],
+    "113": [
+      {
+        "number": 1,
+        "text": "قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ",
+        "translation": "Say, \"I seek refuge in the Lord of daybreak",
+        "surahId": 113
+      },
+      {
+        "number": 2,
+        "text": "مِن شَرِّ مَا خَلَقَ",
+        "translation": "From the evil of that which He created",
+        "surahId": 113
+      },
+      {
+        "number": 3,
+        "text": "وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ",
+        "translation": "And from the evil of darkness when it settles",
+        "surahId": 113
+      },
+      {
+        "number": 4,
+        "text": "وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ",
+        "translation": "And from the evil of the blowers in knots",
+        "surahId": 113
+      },
+      {
+        "number": 5,
+        "text": "وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ",
+        "translation": "And from the evil of an envier when he envies.\"",
+        "surahId": 113
+      }
+    ],
+    "114": [
+      {
+        "number": 1,
+        "text": "قُلْ أَعُوذُ بِرَبِّ النَّاسِ",
+        "translation": "Say, \"I seek refuge in the Lord of mankind,",
+        "surahId": 114
+      },
+      {
+        "number": 2,
+        "text": "مَلِكِ النَّاسِ",
+        "translation": "The Sovereign of mankind,",
+        "surahId": 114
+      },
+      {
+        "number": 3,
+        "text": "إِلَٰهِ النَّاسِ",
+        "translation": "The God of mankind,",
+        "surahId": 114
+      },
+      {
+        "number": 4,
+        "text": "مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ",
+        "translation": "From the evil of the retreating whisperer -",
+        "surahId": 114
+      },
+      {
+        "number": 5,
+        "text": "الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ",
+        "translation": "Who whispers [evil] into the breasts of mankind -",
+        "surahId": 114
+      },
+      {
+        "number": 6,
+        "text": "مِنَ الْجِنَّةِ وَالنَّاسِ",
+        "translation": "From among the jinn and mankind.\"",
+        "surahId": 114
+      }
+    ],
+    "103": [
+      {
+        "number": 1,
+        "text": "وَالْعَصْرِ",
+        "translation": "By time,",
+        "surahId": 103
+      },
+      {
+        "number": 2,
+        "text": "إِنَّ الْإِنسَانَ لَفِي خُسْرٍ",
+        "translation": "Indeed, mankind is in loss,",
+        "surahId": 103
+      },
+      {
+        "number": 3,
+        "text": "إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ",
+        "translation": "Except for those who have believed and done righteous deeds and advised each other to truth and advised each other to patience.",
+        "surahId": 103
+      }
+    ],
+    "108": [
+      {
+        "number": 1,
+        "text": "إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ",
+        "translation": "Indeed, We have granted you, [O Muhammad], al-Kawthar.",
+        "surahId": 108
+      },
+      {
+        "number": 2,
+        "text": "فَصَلِّ لِرَبِّكَ وَانْحَرْ",
+        "translation": "So pray to your Lord and sacrifice [to Him alone].",
+        "surahId": 108
+      },
+      {
+        "number": 3,
+        "text": "إِنَّ شَانِئَكَ هُوَ الْأَبْتَرُ",
+        "translation": "Indeed, your enemy is the one cut off.",
+        "surahId": 108
+      }
+    ],
+    "109": [
+      {
+        "number": 1,
+        "text": "قُلْ يَا أَيُّهَا الْكَافِرُونَ",
+        "translation": "Say, \"O disbelievers,",
+        "surahId": 109
+      },
+      {
+        "number": 2,
+        "text": "لَا أَعْبُدُ مَا تَعْبُدُونَ",
+        "translation": "I do not worship what you worship.",
+        "surahId": 109
+      },
+      {
+        "number": 3,
+        "text": "وَلَا أَنتُمْ عَابِدُونَ مَا أَعْبُدُ",
+        "translation": "Nor are you worshippers of what I worship.",
+        "surahId": 109
+      },
+      {
+        "number": 4,
+        "text": "وَلَا أَنَا عَابِدٌ مَّا عَبَدتُّمْ",
+        "translation": "Nor will I be a worshipper of what you worship.",
+        "surahId": 109
+      },
+      {
+        "number": 5,
+        "text": "وَلَا أَنتُمْ عَابِدُونَ مَا أَعْبُدُ",
+        "translation": "Nor will you be worshippers of what I worship.",
+        "surahId": 109
+      },
+      {
+        "number": 6,
+        "text": "لَكُمْ دِينُكُمْ وَلِيَ دِينِ",
+        "translation": "For you is your religion, and for me is my religion.\"",
+        "surahId": 109
+      }
+    ],
+    "110": [
+      {
+        "number": 1,
+        "text": "إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ",
+        "translation": "When the victory of Allah has come and the conquest,",
+        "surahId": 110
+      },
+      {
+        "number": 2,
+        "text": "وَرَأَيْتَ النَّاسَ يَدْخُلُونَ فِي دِينِ اللَّهِ أَفْوَاجًا",
+        "translation": "And you see the people entering into the religion of Allah in multitudes,",
+        "surahId": 110
+      },
+      {
+        "number": 3,
+        "text": "فَسَبِّحْ بِحَمْدِ رَبِّكَ وَاسْتَغْفِرْهُ ۚ إِنَّهُ كَانَ تَوَّابًا",
+        "translation": "Then exalt [Him] with praise of your Lord and ask forgiveness of Him. Indeed, He is ever Accepting of repentance.",
+        "surahId": 110
+      }
     ]
   }
 }
