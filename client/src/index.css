@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap');
 
+@import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Noto+Naskh+Arabic:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -122,6 +124,23 @@
   
   .bg-islamic-dark {
     background-color: hsl(var(--islamic-dark));
+  }
+
+  /* Arabic font classes */
+  .font-arabic {
+    font-family: 'Amiri Quran', 'Noto Naskh Arabic', 'Arabic Typesetting', serif;
+  }
+
+  .quran-text {
+    font-family: 'Amiri Quran', serif;
+    line-height: 2.2;
+    font-size: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .quran-text {
+      font-size: 1.875rem;
+    }
   }
   
   .hover\:bg-islamic-dark:hover {

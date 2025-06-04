@@ -286,6 +286,17 @@ export default function Home() {
           onSeek={audioPlayer.seek}
         />
 
+        {/* Ayah Display with Translation */}
+        <AyahDisplay
+          currentAyah={audioPlayer.currentAyah}
+          surahName={currentSurah ? getSurahDisplayName(currentSurah) : ""}
+          currentAyahNumber={audioPlayer.currentAyah?.number || 1}
+          totalAyahs={selectedAyahs.length}
+          isPlaying={audioPlayer.isPlaying}
+          showTranslation={showTranslation}
+          onTranslationToggle={setShowTranslation}
+        />
+
         {/* Recitation Status */}
         <RecitationStatus
           completedAyahs={audioPlayer.getCompletedAyahs()}
