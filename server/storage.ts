@@ -243,7 +243,52 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAyahs(surahId: number): Promise<Ayah[]> {
-    return this.quranData.ayahs[surahId.toString()] || [];
+    // Check if ayahs exist in local data
+    const localAyahs = this.quranData.ayahs?.[surahId.toString()];
+    if (localAyahs && localAyahs.length > 0) {
+      return localAyahs;
+    }
+
+    // Fetch authentic ayahs from Al-Quran Cloud API
+    try {
+      // Fetch entire surah with Arabic text and English translation
+      const [arabicResponse, translationResponse] = await Promise.all([
+        fetch(`https://api.alquran.cloud/v1/surah/${surahId}/ar.asad`),
+        fetch(`https://api.alquran.cloud/v1/surah/${surahId}/en.sahih`)
+      ]);
+
+      const [arabicData, translationData] = await Promise.all([
+        arabicResponse.json(),
+        translationResponse.json()
+      ]);
+
+      if (arabicData.code === 200 && translationData.code === 200) {
+        const ayahs: Ayah[] = [];
+        const arabicAyahs = arabicData.data.ayahs;
+        const translationAyahs = translationData.data.ayahs;
+
+        for (let i = 0; i < arabicAyahs.length; i++) {
+          const arabicAyah = arabicAyahs[i];
+          const translationAyah = translationAyahs[i];
+          
+          ayahs.push({
+            number: arabicAyah.numberInSurah,
+            text: arabicAyah.text,
+            translation: translationAyah.text,
+            surahId: surahId,
+            arabicText: arabicAyah.text,
+            englishTranslation: translationAyah.text
+          });
+        }
+
+        return ayahs;
+      }
+
+      return [];
+    } catch (error) {
+      console.error('Failed to fetch ayahs from API:', error);
+      return [];
+    }
   }
 
   async getAyah(surahId: number, ayahNumber: number): Promise<Ayah | undefined> {

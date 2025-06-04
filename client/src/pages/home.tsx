@@ -40,8 +40,8 @@ export default function Home() {
   });
 
   // Load ayahs for selected range
-  const { data: allAyahs = [] } = useQuery<Ayah[]>({
-    queryKey: ["/api/surahs", selectedSurah, "ayahs"],
+  const { data: allAyahs = [], isLoading: ayahsLoading, error: ayahsError } = useQuery<Ayah[]>({
+    queryKey: [`/api/surahs/${selectedSurah}/ayahs`],
     enabled: !!selectedSurah,
   });
 
@@ -54,6 +54,16 @@ export default function Home() {
   const selectedAyahs = allAyahs.filter(
     ayah => ayah.number >= startAyah && ayah.number <= endAyah
   );
+
+  console.log('Ayah loading debug:', { 
+    selectedSurah, 
+    allAyahsCount: allAyahs.length, 
+    selectedAyahsCount: selectedAyahs.length,
+    startAyah,
+    endAyah,
+    ayahsLoading,
+    ayahsError
+  });
 
   // Update preferences mutation
   const updatePreferencesMutation = useMutation({
