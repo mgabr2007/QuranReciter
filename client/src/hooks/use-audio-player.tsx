@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Ayah } from "@shared/schema";
+import { createAudioUrl } from "@/lib/quran-data";
 
 interface UseAudioPlayerProps {
   ayahs: Ayah[];
@@ -57,21 +58,50 @@ export const useAudioPlayer = ({
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      // For demo purposes, we'll simulate audio loading
-      // In a real app, you would load actual audio files
-      const audioUrl = `/audio/surah_${ayahs[ayahIndex].surahId}_ayah_${ayahs[ayahIndex].number}.mp3`;
+      const ayah = ayahs[ayahIndex];
+      const audioUrl = createAudioUrl(ayah.surahId, ayah.number);
       
       if (audioRef.current) {
         audioRef.current.src = audioUrl;
-        // Simulate loading delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setState(prev => ({ ...prev, isLoading: false, duration: 10 })); // Simulated 10-second duration
+        audioRef.current.load();
+        
+        // Wait for audio to load
+        await new Promise((resolve, reject) => {
+          const audio = audioRef.current!;
+          
+          const onCanPlay = () => {
+            audio.removeEventListener('canplay', onCanPlay);
+            audio.removeEventListener('error', onError);
+            setState(prev => ({ 
+              ...prev, 
+              isLoading: false, 
+              duration: audio.duration || 10 
+            }));
+            resolve(void 0);
+          };
+          
+          const onError = () => {
+            audio.removeEventListener('canplay', onCanPlay);
+            audio.removeEventListener('error', onError);
+            reject(new Error('Failed to load audio'));
+          };
+          
+          audio.addEventListener('canplay', onCanPlay);
+          audio.addEventListener('error', onError);
+          
+          // Timeout after 10 seconds
+          setTimeout(() => {
+            audio.removeEventListener('canplay', onCanPlay);
+            audio.removeEventListener('error', onError);
+            reject(new Error('Audio load timeout'));
+          }, 10000);
+        });
       }
     } catch (error) {
       setState(prev => ({ 
         ...prev, 
         isLoading: false, 
-        error: 'Failed to load audio. Please check your connection.' 
+        error: 'Failed to load audio. Please check your internet connection.' 
       }));
     }
   }, [ayahs]);
@@ -171,28 +201,42 @@ export const useAudioPlayer = ({
     }
   }, [state.isPlaying, state.currentAyahIndex, loadAyah]);
 
-  // Simulate audio progress
+  // Real audio progress tracking
   useEffect(() => {
-    if (state.isPlaying && !state.isPaused && !state.isLoading) {
-      const interval = setInterval(() => {
-        setState(prev => {
-          const newTime = prev.currentTime + 1;
-          if (newTime >= prev.duration) {
-            // Ayah finished, play next or repeat
-            if (autoRepeat) {
-              return { ...prev, currentTime: 0 };
-            } else {
-              playNextAyah();
-              return prev;
-            }
-          }
-          return { ...prev, currentTime: newTime };
-        });
-      }, 1000);
-
-      return () => clearInterval(interval);
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.crossOrigin = "anonymous";
     }
-  }, [state.isPlaying, state.isPaused, state.isLoading, autoRepeat, playNextAyah]);
+
+    const audio = audioRef.current;
+
+    const updateTime = () => {
+      setState(prev => ({ ...prev, currentTime: audio.currentTime }));
+    };
+
+    const onEnded = () => {
+      if (autoRepeat) {
+        audio.currentTime = 0;
+        audio.play();
+      } else {
+        playNextAyah();
+      }
+    };
+
+    const onLoadedMetadata = () => {
+      setState(prev => ({ ...prev, duration: audio.duration }));
+    };
+
+    audio.addEventListener('timeupdate', updateTime);
+    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+
+    return () => {
+      audio.removeEventListener('timeupdate', updateTime);
+      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+    };
+  }, [autoRepeat, playNextAyah]);
 
   // Cleanup on unmount
   useEffect(() => {

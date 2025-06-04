@@ -17,9 +17,11 @@ export const getAyahRange = (totalAyahs: number, startAyah?: number, endAyah?: n
 };
 
 export const createAudioUrl = (surahId: number, ayahNumber: number): string => {
-  // This would typically point to actual audio files
-  // For demo purposes, we'll return a placeholder URL
-  return `/audio/surah_${surahId.toString().padStart(3, '0')}/ayah_${ayahNumber.toString().padStart(3, '0')}.mp3`;
+  // Using authentic Quran recitation from Al-Afasy (a well-known reciter)
+  // This uses the EveryAyah.com API which provides authentic Quran audio
+  const paddedSurah = surahId.toString().padStart(3, '0');
+  const paddedAyah = ayahNumber.toString().padStart(3, '0');
+  return `https://everyayah.com/data/Alafasy_128kbps/${paddedSurah}${paddedAyah}.mp3`;
 };
 
 export const getEstimatedDuration = (numberOfAyahs: number, pauseDuration: number): number => {
