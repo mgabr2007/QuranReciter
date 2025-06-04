@@ -172,6 +172,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Audio caching routes
+  app.post("/api/audio/preload/:surahId", async (req, res) => {
+    try {
+      const surahId = parseInt(req.params.surahId);
+      await storage.preloadAudioFiles(surahId);
+      res.json({ message: `Audio files preloaded for Surah ${surahId}` });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to preload audio files" });
+    }
+  });
+
+  app.get("/api/audio/:surahId/:ayahNumber", async (req, res) => {
+    try {
+      const surahId = parseInt(req.params.surahId);
+      const ayahNumber = parseInt(req.params.ayahNumber);
+      
+      const cachedAudio = await storage.getCachedAudioFile(surahId, ayahNumber);
+      if (cachedAudio) {
+        res.json({
+          audioUrl: cachedAudio.audioUrl,
+          alternativeUrl: cachedAudio.alternativeUrl,
+          duration: cachedAudio.duration,
+          isVerified: cachedAudio.isVerified
+        });
+      } else {
+        // Cache the audio file if not already cached
+        await storage.preloadAudioFiles(surahId);
+        const newCachedAudio = await storage.getCachedAudioFile(surahId, ayahNumber);
+        if (newCachedAudio) {
+          res.json({
+            audioUrl: newCachedAudio.audioUrl,
+            alternativeUrl: newCachedAudio.alternativeUrl,
+            duration: newCachedAudio.duration,
+            isVerified: newCachedAudio.isVerified
+          });
+        } else {
+          res.status(404).json({ message: "Audio file not found" });
+        }
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch audio file" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

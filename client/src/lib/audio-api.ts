@@ -13,6 +13,21 @@ export interface AyahAudioData {
 
 export const getAyahAudio = async (surahId: number, ayahNumber: number): Promise<string> => {
   try {
+    // Try to get cached audio from database first
+    const cachedResponse = await fetch(`/api/audio/${surahId}/${ayahNumber}`);
+    if (cachedResponse.ok) {
+      const cachedData = await cachedResponse.json();
+      console.log('Using cached audio URL:', cachedData.audioUrl);
+      
+      // Return verified URL or fallback to alternative
+      if (cachedData.isVerified && cachedData.audioUrl) {
+        return cachedData.audioUrl;
+      } else if (cachedData.alternativeUrl) {
+        return cachedData.alternativeUrl;
+      }
+    }
+    
+    // Fallback to Al-Quran Cloud API if caching fails
     const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surahId}:${ayahNumber}/ar.alafasy`);
     const data = await response.json();
     

@@ -18,7 +18,7 @@ import {
   type Ayah
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 
@@ -308,9 +308,13 @@ export class DatabaseStorage implements IStorage {
     const [cachedFile] = await db
       .select()
       .from(cachedAudioFiles)
-      .where(eq(cachedAudioFiles.surahId, surahId))
-      .where(eq(cachedAudioFiles.ayahNumber, ayahNumber))
-      .where(eq(cachedAudioFiles.reciterName, reciterName));
+      .where(
+        and(
+          eq(cachedAudioFiles.surahId, surahId),
+          eq(cachedAudioFiles.ayahNumber, ayahNumber),
+          eq(cachedAudioFiles.reciterName, reciterName)
+        )
+      );
     return cachedFile;
   }
 
