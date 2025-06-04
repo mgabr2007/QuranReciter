@@ -54,10 +54,59 @@ export const BookmarksList = ({ onPlayAyah }: BookmarksListProps) => {
     },
   });
 
+  const updateBookmarkMutation = useMutation({
+    mutationFn: ({ id, notes }: { id: number; notes: string }) => 
+      apiRequest("PATCH", `/api/bookmarks/${id}`, { notes }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookmarks"] });
+      setEditingBookmark(null);
+      setEditNotes("");
+      toast({
+        title: "Notes updated",
+        description: "Your bookmark notes have been saved",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update notes",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleDelete = async (bookmarkId: number) => {
     setDeletingId(bookmarkId);
     await deleteBookmarkMutation.mutateAsync(bookmarkId);
   };
+
+  const handleEditNotes = (bookmark: BookmarkedAyah) => {
+    setEditingBookmark(bookmark);
+    setEditNotes(bookmark.notes || "");
+  };
+
+  const handleSaveNotes = () => {
+    if (editingBookmark) {
+      updateBookmarkMutation.mutate({
+        id: editingBookmark.id,
+        notes: editNotes,
+      });
+    }
+  };
+
+  // Filter bookmarks based on search query
+  const filteredBookmarks = bookmarks.filter(bookmark => {
+    if (!searchQuery) return true;
+    
+    const searchLower = searchQuery.toLowerCase();
+    const surahName = getSurahName(bookmark.surahId).toLowerCase();
+    const notes = (bookmark.notes || "").toLowerCase();
+    const ayahRef = `ayah ${bookmark.ayahNumber}`.toLowerCase();
+    
+    return surahName.includes(searchLower) || 
+           notes.includes(searchLower) || 
+           ayahRef.includes(searchLower);
+  });
 
   const getSurahName = (surahId: number) => {
     const surah = surahs.find(s => s.id === surahId);
@@ -119,17 +168,37 @@ export const BookmarksList = ({ onPlayAyah }: BookmarksListProps) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Heart className="h-5 w-5 text-islamic-green" />
-          Bookmarked Verses ({bookmarks.length})
+          Bookmarked Verses ({filteredBookmarks.length}{bookmarks.length !== filteredBookmarks.length ? ` of ${bookmarks.length}` : ''})
         </CardTitle>
+        
+        {/* Search Input */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search bookmarks by surah, verse, or notes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[400px]">
-          <div className="space-y-3">
-            {bookmarks.map((bookmark) => (
-              <div
-                key={bookmark.id}
-                className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-              >
+        {filteredBookmarks.length === 0 && searchQuery ? (
+          <div className="text-center py-8">
+            <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 mb-2">No bookmarks found</p>
+            <p className="text-sm text-gray-500">
+              Try adjusting your search terms
+            </p>
+          </div>
+        ) : (
+          <ScrollArea className="h-[400px]">
+            <div className="space-y-3">
+              {filteredBookmarks.map((bookmark) => (
+                <div
+                  key={bookmark.id}
+                  className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
@@ -164,6 +233,52 @@ export const BookmarksList = ({ onPlayAyah }: BookmarksListProps) => {
                       </Button>
                     )}
                     
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditNotes(bookmark)}
+                          className="text-gray-600 hover:text-gray-700 hover:bg-gray-100"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2">
+                            <MessageCircle className="h-5 w-5 text-islamic-green" />
+                            Edit Bookmark Notes
+                          </DialogTitle>
+                        </DialogHeader>
+                        
+                        <div className="space-y-4">
+                          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {getSurahName(bookmark.surahId)} - Verse {bookmark.ayahNumber}
+                            </p>
+                          </div>
+                          
+                          <Textarea
+                            placeholder="Add your thoughts, reflections, or reminders about this verse..."
+                            value={editNotes}
+                            onChange={(e) => setEditNotes(e.target.value)}
+                            className="min-h-[100px] resize-none"
+                          />
+                        </div>
+                        
+                        <DialogFooter>
+                          <Button 
+                            onClick={handleSaveNotes}
+                            disabled={updateBookmarkMutation.isPending}
+                            className="bg-islamic-green hover:bg-islamic-green/90"
+                          >
+                            {updateBookmarkMutation.isPending ? "Saving..." : "Save Notes"}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                    
                     <Button
                       variant="ghost"
                       size="sm"
@@ -177,8 +292,9 @@ export const BookmarksList = ({ onPlayAyah }: BookmarksListProps) => {
                 </div>
               </div>
             ))}
-          </div>
-        </ScrollArea>
+            </div>
+          </ScrollArea>
+        )}
       </CardContent>
     </Card>
   );
