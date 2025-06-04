@@ -57,62 +57,76 @@ export const useAudioPlayer = ({
 
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
-    try {
-      const ayah = ayahs[ayahIndex];
-      const audioUrl = createAudioUrl(ayah.surahId, ayah.number);
-      
-      if (audioRef.current) {
-        audioRef.current.src = audioUrl;
-        audioRef.current.load();
-        
-        // Wait for audio to load
-        await new Promise((resolve, reject) => {
-          const audio = audioRef.current!;
-          
-          const onCanPlay = () => {
-            console.log('Audio can play:', audioUrl);
-            audio.removeEventListener('canplay', onCanPlay);
-            audio.removeEventListener('error', onError);
-            audio.removeEventListener('loadstart', onLoadStart);
-            setState(prev => ({ 
-              ...prev, 
-              isLoading: false, 
-              duration: audio.duration || 10 
-            }));
-            resolve(void 0);
-          };
-          
-          const onError = (e: Event) => {
-            console.error('Audio error:', audioUrl, e);
-            audio.removeEventListener('canplay', onCanPlay);
-            audio.removeEventListener('error', onError);
-            audio.removeEventListener('loadstart', onLoadStart);
-            reject(new Error('Failed to load audio'));
-          };
+    const ayah = ayahs[ayahIndex];
+    const primaryUrl = createAudioUrl(ayah.surahId, ayah.number);
+    const alternativeUrl = createAlternativeAudioUrl(ayah.surahId, ayah.number);
+    
+    const tryLoadAudio = async (url: string): Promise<boolean> => {
+      return new Promise((resolve) => {
+        if (!audioRef.current) {
+          resolve(false);
+          return;
+        }
 
-          const onLoadStart = () => {
-            console.log('Audio load started:', audioUrl);
-          };
-          
-          audio.addEventListener('canplay', onCanPlay);
-          audio.addEventListener('error', onError);
-          audio.addEventListener('loadstart', onLoadStart);
-          
-          // Reduce timeout and provide better feedback
-          setTimeout(() => {
-            audio.removeEventListener('canplay', onCanPlay);
-            audio.removeEventListener('error', onError);
-            audio.removeEventListener('loadstart', onLoadStart);
-            console.warn('Audio load timeout:', audioUrl);
-            // Don't reject on timeout, just continue with estimated duration
-            setState(prev => ({ 
-              ...prev, 
-              isLoading: false, 
-              duration: 10 
-            }));
-            resolve(void 0);
-          }, 5000);
-        });
+        const audio = audioRef.current;
+        
+        const cleanup = () => {
+          audio.removeEventListener('canplay', onCanPlay);
+          audio.removeEventListener('error', onError);
+          audio.removeEventListener('loadstart', onLoadStart);
+        };
+
+        const onCanPlay = () => {
+          console.log('Audio loaded successfully:', url);
+          cleanup();
+          setState(prev => ({ 
+            ...prev, 
+            isLoading: false, 
+            duration: audio.duration || 10 
+          }));
+          resolve(true);
+        };
+        
+        const onError = () => {
+          console.warn('Failed to load audio from:', url);
+          cleanup();
+          resolve(false);
+        };
+
+        const onLoadStart = () => {
+          console.log('Loading audio from:', url);
+        };
+        
+        audio.addEventListener('canplay', onCanPlay);
+        audio.addEventListener('error', onError);
+        audio.addEventListener('loadstart', onLoadStart);
+        
+        audio.src = url;
+        audio.load();
+        
+        // Timeout after 8 seconds
+        setTimeout(() => {
+          cleanup();
+          resolve(false);
+        }, 8000);
+      });
+    };
+
+    try {
+      // Try primary source first
+      const primarySuccess = await tryLoadAudio(primaryUrl);
+      
+      if (!primarySuccess) {
+        console.log('Trying alternative audio source...');
+        const alternativeSuccess = await tryLoadAudio(alternativeUrl);
+        
+        if (!alternativeSuccess) {
+          setState(prev => ({ 
+            ...prev, 
+            isLoading: false, 
+            error: 'Audio temporarily unavailable. Please try again later.' 
+          }));
+        }
       }
     } catch (error) {
       setState(prev => ({ 
