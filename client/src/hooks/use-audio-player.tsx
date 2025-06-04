@@ -133,17 +133,31 @@ export const useAudioPlayer = ({
     }, pauseDuration * 1000);
   }, [state.currentAyahIndex, state.sessionCompleted, ayahs.length, pauseDuration, onAyahChange, onSessionComplete, loadAyah]);
 
-  const play = useCallback(() => {
+  const play = useCallback(async () => {
     setState(prev => ({ ...prev, isPlaying: true }));
     startTimeRef.current = Date.now();
     
     if (currentAyah) {
-      loadAyah(state.currentAyahIndex);
+      await loadAyah(state.currentAyahIndex);
+      if (audioRef.current) {
+        try {
+          await audioRef.current.play();
+        } catch (error) {
+          setState(prev => ({ 
+            ...prev, 
+            isPlaying: false, 
+            error: 'Failed to play audio. Please try again.' 
+          }));
+        }
+      }
     }
   }, [currentAyah, state.currentAyahIndex, loadAyah]);
 
   const pause = useCallback(() => {
     setState(prev => ({ ...prev, isPlaying: false }));
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
     clearPauseTimeout();
   }, [clearPauseTimeout]);
 
@@ -188,18 +202,28 @@ export const useAudioPlayer = ({
   }, [state.currentAyahIndex, ayahs.length, skipToAyah]);
 
   const seek = useCallback((time: number) => {
-    setState(prev => ({ ...prev, currentTime: time }));
     if (audioRef.current) {
       audioRef.current.currentTime = time;
+      setState(prev => ({ ...prev, currentTime: time }));
     }
   }, []);
 
-  const repeatCurrent = useCallback(() => {
-    setState(prev => ({ ...prev, currentTime: 0 }));
-    if (state.isPlaying) {
-      loadAyah(state.currentAyahIndex);
+  const repeatCurrent = useCallback(async () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      setState(prev => ({ ...prev, currentTime: 0 }));
+      if (state.isPlaying) {
+        try {
+          await audioRef.current.play();
+        } catch (error) {
+          setState(prev => ({ 
+            ...prev, 
+            error: 'Failed to repeat audio. Please try again.' 
+          }));
+        }
+      }
     }
-  }, [state.isPlaying, state.currentAyahIndex, loadAyah]);
+  }, [state.isPlaying]);
 
   // Real audio progress tracking
   useEffect(() => {
