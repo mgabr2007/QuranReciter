@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { SurahSelector } from "@/components/surah-selector";
 import { PauseSettings } from "@/components/pause-settings";
 import { AudioPlayer } from "@/components/audio-player";
+import { AyahDisplay } from "@/components/ayah-display";
 import { RecitationStatus } from "@/components/recitation-status";
 import { QuickActions } from "@/components/quick-actions";
 import { useAudioPlayer } from "@/hooks/use-audio-player";

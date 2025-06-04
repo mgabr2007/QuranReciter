@@ -113,4 +113,6 @@ export interface Ayah {
   text: string;
   translation: string;
   surahId: number;
+  arabicText?: string;
+  englishTranslation?: string;
 }
