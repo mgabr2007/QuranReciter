@@ -46,6 +46,7 @@ export interface IStorage {
   
   createBookmark(bookmark: InsertBookmarkedAyah): Promise<BookmarkedAyah>;
   getUserBookmarks(userId: number): Promise<BookmarkedAyah[]>;
+  updateBookmark(id: number, updates: Partial<InsertBookmarkedAyah>): Promise<BookmarkedAyah>;
   deleteBookmark(id: number): Promise<void>;
   
   getSurahs(): Promise<Surah[]>;
@@ -236,6 +237,15 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(bookmarkedAyahs)
       .where(eq(bookmarkedAyahs.userId, userId));
+  }
+
+  async updateBookmark(id: number, updates: Partial<InsertBookmarkedAyah>): Promise<BookmarkedAyah> {
+    const [bookmark] = await db
+      .update(bookmarkedAyahs)
+      .set(updates)
+      .where(eq(bookmarkedAyahs.id, id))
+      .returning();
+    return bookmark;
   }
 
   async deleteBookmark(id: number): Promise<void> {

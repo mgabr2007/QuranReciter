@@ -162,6 +162,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/bookmarks/:id", async (req, res) => {
+    try {
+      const bookmarkId = parseInt(req.params.id);
+      const { notes } = req.body;
+      const bookmark = await storage.updateBookmark(bookmarkId, { notes });
+      res.json(bookmark);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update bookmark" });
+    }
+  });
+
   app.delete("/api/bookmarks/:id", async (req, res) => {
     try {
       const bookmarkId = parseInt(req.params.id);
