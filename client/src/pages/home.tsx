@@ -7,11 +7,12 @@ import { AudioPlayer } from "@/components/audio-player";
 import { AyahDisplay } from "@/components/ayah-display";
 import { RecitationStatus } from "@/components/recitation-status";
 import { QuickActions } from "@/components/quick-actions";
+import { VerseSearch } from "@/components/verse-search";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Settings, History as HistoryIcon, Heart } from "lucide-react";
+import { Settings, History as HistoryIcon, Heart, Search } from "lucide-react";
 import type { Surah, Ayah, UserPreferences, BookmarkedAyah } from "@shared/schema";
 import { getSurahDisplayName } from "@/lib/quran-data";
 
@@ -27,6 +28,7 @@ export default function Home() {
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [showTranslation, setShowTranslation] = useState(true);
+  const [showVerseSearch, setShowVerseSearch] = useState(false);
 
   // Load user preferences
   const { data: preferences } = useQuery<UserPreferences>({
