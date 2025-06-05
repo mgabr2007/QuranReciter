@@ -216,6 +216,22 @@ export default function Home() {
     }
   };
 
+  const handlePlayVerseFromSearch = (surahId: number, ayahNumber: number) => {
+    // Stop current playback
+    audioPlayer.stop();
+    
+    // Switch to the selected surah and ayah
+    setSelectedSurah(surahId);
+    setStartAyah(ayahNumber);
+    setEndAyah(ayahNumber);
+    
+    // Update preferences
+    updatePreferencesMutation.mutate({
+      lastSurah: surahId,
+      lastAyah: ayahNumber,
+    });
+  };
+
   const isCurrentAyahBookmarked = () => {
     const currentAyah = audioPlayer.currentAyah;
     if (!currentAyah) return false;
@@ -243,6 +259,15 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-600 hover:text-gray-900"
+                onClick={() => setShowVerseSearch(true)}
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Search
+              </Button>
               <Link href="/bookmarks">
                 <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
                   <Heart className="h-4 w-4 mr-2" />
@@ -347,6 +372,14 @@ export default function Home() {
             )}
           </Button>
         </div>
+      )}
+
+      {/* Verse Search Modal */}
+      {showVerseSearch && (
+        <VerseSearch
+          onPlayVerse={handlePlayVerseFromSearch}
+          onClose={() => setShowVerseSearch(false)}
+        />
       )}
     </div>
   );
