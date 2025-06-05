@@ -29,9 +29,16 @@ export const getAyahAudio = async (surahId: number, ayahNumber: number): Promise
     
     // Fallback to Al-Quran Cloud API if caching fails
     const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surahId}:${ayahNumber}/ar.alafasy`);
+    
+    if (!response.ok) {
+      throw new Error(`Al-Quran Cloud API error: ${response.status}`);
+    }
+    
     const data = await response.json();
+    console.log('Al-Quran Cloud API response:', data);
     
     if (data.code === 200 && data.data && data.data.audio) {
+      console.log('Found audio URL from Al-Quran Cloud:', data.data.audio);
       return data.data.audio;
     }
     
