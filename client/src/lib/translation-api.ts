@@ -17,6 +17,19 @@ export interface AyahTranslationData {
 
 export const getAyahTranslation = async (surahId: number, ayahNumber: number): Promise<string> => {
   try {
+    // Try QuranAPI.pages.dev first (no authentication required)
+    const quranApiResponse = await fetch(`https://quranapi.pages.dev/api/verses/${surahId}:${ayahNumber}/en.sahih`);
+    
+    if (quranApiResponse.ok) {
+      const quranApiData = await quranApiResponse.json();
+      console.log('QuranAPI.pages.dev translation response:', quranApiData);
+      
+      if (quranApiData.text) {
+        return quranApiData.text;
+      }
+    }
+    
+    // Fallback to Al-Quran Cloud API
     const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surahId}:${ayahNumber}/en.sahih`);
     const data = await response.json();
     

@@ -13,36 +13,45 @@ export interface AyahAudioData {
 
 export const getAyahAudio = async (surahId: number, ayahNumber: number): Promise<string> => {
   try {
-    // Try to get cached audio from database first
-    const cachedResponse = await fetch(`/api/audio/${surahId}/${ayahNumber}`);
-    if (cachedResponse.ok) {
-      const cachedData = await cachedResponse.json();
-      console.log('Using cached audio URL:', cachedData.audioUrl);
+    // Try QuranAPI.pages.dev first (no authentication required)
+    const quranApiResponse = await fetch(`https://quranapi.pages.dev/api/verses/${surahId}:${ayahNumber}/ar.alafasy`);
+    
+    if (quranApiResponse.ok) {
+      const quranApiData = await quranApiResponse.json();
+      console.log('QuranAPI.pages.dev response:', quranApiData);
       
-      // Return verified URL or fallback to alternative
-      if (cachedData.isVerified && cachedData.audioUrl) {
-        return cachedData.audioUrl;
-      } else if (cachedData.alternativeUrl) {
-        return cachedData.alternativeUrl;
+      if (quranApiData.audio) {
+        console.log('Found audio URL from QuranAPI.pages.dev:', quranApiData.audio);
+        return quranApiData.audio;
       }
     }
     
-    // Fallback to Al-Quran Cloud API if caching fails
-    const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surahId}:${ayahNumber}/ar.alafasy`);
+    // Fallback to Al-Quran Cloud API
+    const alQuranResponse = await fetch(`https://api.alquran.cloud/v1/ayah/${surahId}:${ayahNumber}/ar.alafasy`);
     
-    if (!response.ok) {
-      throw new Error(`Al-Quran Cloud API error: ${response.status}`);
+    if (alQuranResponse.ok) {
+      const alQuranData = await alQuranResponse.json();
+      console.log('Al-Quran Cloud API response:', alQuranData);
+      
+      if (alQuranData.code === 200 && alQuranData.data && alQuranData.data.audio) {
+        console.log('Found audio URL from Al-Quran Cloud:', alQuranData.data.audio);
+        return alQuranData.data.audio;
+      }
     }
     
-    const data = await response.json();
-    console.log('Al-Quran Cloud API response:', data);
+    // Try alternative reciter from QuranAPI.pages.dev
+    const altQuranApiResponse = await fetch(`https://quranapi.pages.dev/api/verses/${surahId}:${ayahNumber}/ar.abdurrahmaansudais`);
     
-    if (data.code === 200 && data.data && data.data.audio) {
-      console.log('Found audio URL from Al-Quran Cloud:', data.data.audio);
-      return data.data.audio;
+    if (altQuranApiResponse.ok) {
+      const altQuranApiData = await altQuranApiResponse.json();
+      
+      if (altQuranApiData.audio) {
+        console.log('Found alternative audio URL from QuranAPI.pages.dev:', altQuranApiData.audio);
+        return altQuranApiData.audio;
+      }
     }
     
-    throw new Error('No audio URL found in API response');
+    throw new Error('No audio URL found from any API source');
   } catch (error) {
     console.error('Error fetching ayah audio:', error);
     throw error;
