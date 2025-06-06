@@ -240,9 +240,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateBookmark(id: number, updates: Partial<InsertBookmarkedAyah>): Promise<BookmarkedAyah> {
+    const updateData = {
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    
     const [bookmark] = await db
       .update(bookmarkedAyahs)
-      .set(updates)
+      .set(updateData)
       .where(eq(bookmarkedAyahs.id, id))
       .returning();
     return bookmark;

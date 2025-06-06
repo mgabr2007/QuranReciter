@@ -39,7 +39,11 @@ export const bookmarkedAyahs = pgTable("bookmarked_ayahs", {
   surahId: integer("surah_id").notNull(),
   ayahNumber: integer("ayah_number").notNull(),
   notes: text("notes"),
+  tags: text("tags"), // Comma-separated tags
+  isFavorite: boolean("is_favorite").default(false),
+  rating: integer("rating"), // 1-5 star rating
   createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
+  updatedAt: text("updated_at").notNull().default("CURRENT_TIMESTAMP"),
 });
 
 export const cachedAudioFiles = pgTable("cached_audio_files", {
@@ -73,6 +77,7 @@ export const insertRecitationSessionSchema = createInsertSchema(recitationSessio
 export const insertBookmarkedAyahSchema = createInsertSchema(bookmarkedAyahs).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
 });
 
 export const insertCachedAudioFileSchema = createInsertSchema(cachedAudioFiles).omit({
