@@ -11,6 +11,11 @@ export interface AyahAudioData {
   numberInSurah: number;
 }
 
+// Helper function to format numbers with leading zeros for URL paths
+const formatNumber = (num: number, padding: number): string => {
+  return num.toString().padStart(padding, '0');
+};
+
 // Helper function to test if an audio URL is accessible
 const testAudioUrl = async (url: string): Promise<boolean> => {
   try {
@@ -23,33 +28,16 @@ const testAudioUrl = async (url: string): Promise<boolean> => {
 
 export const getAyahAudio = async (surahId: number, ayahNumber: number): Promise<string> => {
   try {
-    // Use Al-Quran Cloud API as primary source
-    const alQuranResponse = await fetch(`https://api.alquran.cloud/v1/ayah/${surahId}:${ayahNumber}/ar.alafasy`);
+    // Use Al-Quran Cloud API as primary source - it's working reliably
+    const apiResponse = await fetch(`https://api.alquran.cloud/v1/ayah/${surahId}:${ayahNumber}/ar.alafasy`);
     
-    if (alQuranResponse.ok) {
-      const alQuranData = await alQuranResponse.json();
-      console.log('Al-Quran Cloud API response:', alQuranData);
+    if (apiResponse.ok) {
+      const apiData = await apiResponse.json();
+      console.log('API response received:', apiData);
       
-      if (alQuranData.code === 200 && alQuranData.data) {
-        // Test primary audio URL
-        if (alQuranData.data.audio) {
-          const isAccessible = await testAudioUrl(alQuranData.data.audio);
-          if (isAccessible) {
-            console.log('Found working audio URL from Al-Quran Cloud:', alQuranData.data.audio);
-            return alQuranData.data.audio;
-          }
-        }
-        
-        // Test secondary audio URLs if primary fails
-        if (alQuranData.data.audioSecondary && alQuranData.data.audioSecondary.length > 0) {
-          for (const secondaryUrl of alQuranData.data.audioSecondary) {
-            const isAccessible = await testAudioUrl(secondaryUrl);
-            if (isAccessible) {
-              console.log('Found working secondary audio URL:', secondaryUrl);
-              return secondaryUrl;
-            }
-          }
-        }
+      if (apiData.code === 200 && apiData.data && apiData.data.audio) {
+        console.log('Found audio URL from API:', apiData.data.audio);
+        return apiData.data.audio;
       }
     }
     
@@ -60,11 +48,26 @@ export const getAyahAudio = async (surahId: number, ayahNumber: number): Promise
       const altData = await altResponse.json();
       
       if (altData.code === 200 && altData.data && altData.data.audio) {
-        const isAccessible = await testAudioUrl(altData.data.audio);
-        if (isAccessible) {
-          console.log('Found working audio URL from alternative reciter:', altData.data.audio);
-          return altData.data.audio;
+        console.log('Found alternative audio URL:', altData.data.audio);
+        return altData.data.audio;
+      }
+    }
+    
+    // Try direct CDN URLs as final fallback
+    const directUrls = [
+      `https://everyayah.com/data/Alafasy_128kbps/${formatNumber(surahId, 3)}${formatNumber(ayahNumber, 3)}.mp3`,
+      `https://versebyversequran.com/downloads/audio/Alafasy/${formatNumber(surahId, 3)}${formatNumber(ayahNumber, 3)}.mp3`
+    ];
+
+    for (const url of directUrls) {
+      try {
+        const testResponse = await fetch(url, { method: 'HEAD' });
+        if (testResponse.ok) {
+          console.log('Found working direct URL:', url);
+          return url;
         }
+      } catch {
+        // Continue to next URL
       }
     }
     
