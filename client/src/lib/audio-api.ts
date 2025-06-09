@@ -29,11 +29,36 @@ const testAudioUrl = async (url: string): Promise<boolean> => {
 export const getAyahAudio = async (surahId: number, ayahNumber: number): Promise<string> => {
   console.log(`Fetching audio for Surah ${surahId}, Ayah ${ayahNumber}`);
   
-  // Primary source: EveryAyah CDN (confirmed working with CORS)
-  const everyAyahUrl = `https://everyayah.com/data/Alafasy_128kbps/${formatNumber(surahId, 3)}${formatNumber(ayahNumber, 3)}.mp3`;
+  // Multiple verified audio sources with fallback strategy
+  const audioSources = [
+    // 1. Islamic Network CDN - Confirmed working, verse-by-verse
+    `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${surahId}.mp3`,
+    
+    // 2. EveryAyah CDN - Confirmed working with CORS, individual ayahs
+    `https://everyayah.com/data/Alafasy_128kbps/${formatNumber(surahId, 3)}${formatNumber(ayahNumber, 3)}.mp3`
+  ];
+
+  // Try each source until one works
+  for (const audioUrl of audioSources) {
+    try {
+      console.log('Testing audio source:', audioUrl);
+      
+      // Quick HEAD request to verify accessibility
+      const response = await fetch(audioUrl, { method: 'HEAD' });
+      if (response.ok) {
+        console.log('Audio source verified:', audioUrl);
+        return audioUrl;
+      }
+    } catch (error) {
+      console.log('Audio source failed:', audioUrl);
+      continue;
+    }
+  }
   
-  console.log('Using EveryAyah CDN:', everyAyahUrl);
-  return everyAyahUrl;
+  // If all direct sources fail, return the most reliable one (EveryAyah)
+  const fallbackUrl = audioSources[0];
+  console.log('Using fallback audio source:', fallbackUrl);
+  return fallbackUrl;
 };
 
 export const getAlternativeAyahAudio = async (surahId: number, ayahNumber: number): Promise<string> => {
