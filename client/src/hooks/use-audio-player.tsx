@@ -138,26 +138,35 @@ export const useAudioPlayer = ({
     
     try {
       console.log(`Loading audio for Surah ${ayah.surahId}, Ayah ${ayah.number}`);
+      
+      // Get primary audio URL (no network verification to avoid timeouts)
       const primaryUrl = await getAyahAudio(ayah.surahId, ayah.number);
       console.log('Primary audio URL:', primaryUrl);
       
+      // Try to load the audio directly
       const success = await tryLoadAudio(primaryUrl);
-      if (success) return;
+      if (success) {
+        console.log('Primary audio loaded successfully');
+        return;
+      }
       
-      console.log('Primary failed, trying alternative...');
+      console.log('Primary failed, trying alternative reciter...');
       const alternativeUrl = await getAlternativeAyahAudio(ayah.surahId, ayah.number);
       console.log('Alternative audio URL:', alternativeUrl);
       
       const alternativeSuccess = await tryLoadAudio(alternativeUrl);
-      if (!alternativeSuccess) {
-        throw new Error('Both audio sources failed to load');
+      if (alternativeSuccess) {
+        console.log('Alternative audio loaded successfully');
+        return;
       }
+      
+      throw new Error('Audio loading failed from all sources');
     } catch (error: any) {
       console.error('Failed to load audio:', error);
       setState(prev => ({ 
         ...prev, 
         isLoading: false, 
-        error: `Failed to load audio: ${error.message}` 
+        error: `Audio unavailable. Please check your internet connection and try again.` 
       }));
     }
   }, [ayahs, tryLoadAudio]);
