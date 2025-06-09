@@ -55,56 +55,77 @@ export const useAudioPlayer = ({
   const tryLoadAudio = useCallback(async (url: string): Promise<boolean> => {
     return new Promise((resolve) => {
       if (!audioRef.current) {
+        console.error('No audio element available');
         resolve(false);
         return;
       }
 
       const audio = audioRef.current;
+      let timeoutId: NodeJS.Timeout;
       
       const cleanup = () => {
-        audio.removeEventListener('canplay', onCanPlay);
+        audio.removeEventListener('canplaythrough', onCanPlay);
+        audio.removeEventListener('loadeddata', onLoadedData);
         audio.removeEventListener('error', onError);
         audio.removeEventListener('loadstart', onLoadStart);
+        if (timeoutId) clearTimeout(timeoutId);
       };
 
       const onCanPlay = () => {
-        console.log('Audio loaded successfully:', url);
+        console.log('Audio can play through:', url);
         cleanup();
         setState(prev => ({ 
           ...prev, 
           isLoading: false, 
-          duration: audio.duration || 10 
+          duration: audio.duration || 0 
         }));
-        
-        // Set volume and prepare for user interaction
-        audio.volume = 0.7;
-        console.log('Audio ready for user interaction');
-        
+        audio.volume = 0.8;
         resolve(true);
       };
+
+      const onLoadedData = () => {
+        console.log('Audio data loaded:', url);
+        // Continue to wait for canplaythrough
+      };
       
-      const onError = () => {
-        console.warn('Failed to load audio from:', url);
+      const onError = (event: Event) => {
+        console.error('Audio loading error:', event, 'URL:', url);
+        console.error('Audio error details:', audio.error);
         cleanup();
         resolve(false);
       };
 
       const onLoadStart = () => {
-        console.log('Loading audio from:', url);
+        console.log('Starting to load audio:', url);
       };
       
-      audio.addEventListener('canplay', onCanPlay);
+      // Add event listeners
+      audio.addEventListener('canplaythrough', onCanPlay);
+      audio.addEventListener('loadeddata', onLoadedData);
       audio.addEventListener('error', onError);
       audio.addEventListener('loadstart', onLoadStart);
       
-      audio.src = url;
-      audio.load();
+      // Set audio properties for better compatibility
+      audio.crossOrigin = 'anonymous';
+      audio.preload = 'auto';
       
-      // Timeout after 8 seconds
-      setTimeout(() => {
+      try {
+        audio.src = url;
+        audio.load();
+        console.log('Audio load initiated for:', url);
+      } catch (loadError) {
+        console.error('Error setting audio src:', loadError);
         cleanup();
         resolve(false);
-      }, 8000);
+        return;
+      }
+      
+      // Timeout after 15 seconds
+      timeoutId = setTimeout(() => {
+        console.warn('Audio loading timeout for:', url);
+        cleanup();
+        resolve(false);
+      }, 15000);
     });
   }, []);
 
