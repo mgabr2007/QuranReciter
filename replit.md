@@ -1,0 +1,128 @@
+# Quran Recitation & Learning Application
+
+## Overview
+
+This is a comprehensive web application designed for Quran recitation practice, memorization, and learning. The application combines authentic audio recitation with interactive features to create an immersive learning experience for users studying the Quran.
+
+## System Architecture
+
+### Full-Stack Architecture
+The application follows a modern full-stack architecture with:
+- **Frontend**: React-based SPA (Single Page Application)
+- **Backend**: Express.js REST API server
+- **Database**: PostgreSQL with Drizzle ORM
+- **Deployment**: Replit-ready with Vite development server
+
+### Technology Stack
+- **Frontend Framework**: React 18 with TypeScript
+- **Styling**: Tailwind CSS with Shadcn/UI component library
+- **Routing**: Wouter (lightweight React router)
+- **State Management**: TanStack Query for server state
+- **Backend**: Express.js with TypeScript
+- **Database**: PostgreSQL with Drizzle ORM
+- **Build Tool**: Vite with ESM modules
+- **Development**: Hot module replacement via Vite
+
+## Key Components
+
+### Audio System
+- Integrates with EveryAyah.com CDN for authentic Quran recitation
+- Primary reciter: Sheikh Alafasy with fallback to Abdul Basit
+- Verse-by-verse audio playback with customizable pause intervals
+- Audio player with standard controls (play, pause, seek, next, previous)
+
+### Text Display
+- Arabic text rendering with Amiri Quran font
+- English translations fetched from QuranAPI.pages.dev and Al-Quran Cloud API
+- Responsive text layout with proper Islamic typography
+
+### Bookmarking System
+- Star rating system (1-5 stars) for favorite verses
+- Custom tagging system for organizing bookmarks
+- Personal notes capability for each bookmarked ayah
+- Multiple view modes: Simple List and Enhanced Collection
+
+### Search Functionality
+- Full-text search across Arabic text and English translations
+- Keyword highlighting in search results
+- Relevance scoring algorithm for better result ranking
+- Direct audio playback from search results
+
+### Session Management
+- Listening history tracking with detailed statistics
+- Progress monitoring for memorization goals
+- Time tracking and completion metrics
+- User preferences persistence
+
+## Data Flow
+
+### Audio Playback Flow
+1. User selects Surah and Ayah range
+2. Application fetches audio URLs from EveryAyah CDN
+3. Audio player loads and plays with configured pause intervals
+4. Session data is tracked and stored in database
+5. Progress is updated in real-time
+
+### Content Retrieval Flow
+1. Surah and Ayah data loaded from local JSON files
+2. Arabic text and translations fetched from external APIs
+3. Content cached and displayed with proper formatting
+4. Bookmarks and notes synchronized with backend database
+
+### User Data Flow
+1. User preferences stored in PostgreSQL database
+2. Session tracking records listening history and statistics
+3. Bookmarks and notes synchronized across sessions
+4. Search functionality operates on both local and API data
+
+## External Dependencies
+
+### Audio Content
+- **EveryAyah.com**: Primary source for authentic Quran audio files
+- Sheikh Alafasy (128kbps) as primary reciter
+- Abdul Basit as fallback reciter option
+
+### Text Content
+- **QuranAPI.pages.dev**: Primary translation API (no authentication)
+- **Al-Quran Cloud API**: Fallback for Arabic text and translations
+- Local Surah metadata stored in JSON format
+
+### UI Components
+- **Shadcn/UI**: Pre-built accessible React components
+- **Radix UI**: Headless UI primitives for complex interactions
+- **Tailwind CSS**: Utility-first styling framework
+
+## Deployment Strategy
+
+### Development Environment
+- Vite development server with HMR
+- Replit integration with runtime error overlay
+- TypeScript compilation and type checking
+
+### Production Build
+- Vite builds optimized client bundle
+- ESBuild compiles server code with external packages
+- Static assets served from Express server
+
+### Database Setup
+- Drizzle ORM manages schema and migrations
+- PostgreSQL connection via Neon serverless driver
+- Environment-based database URL configuration
+
+### Environment Variables
+- `DATABASE_URL`: PostgreSQL connection string
+- `SESSION_SECRET`: Session encryption key
+- `NODE_ENV`: Environment mode (development/production)
+
+## Changelog
+
+```
+Changelog:
+- July 03, 2025. Initial setup
+```
+
+## User Preferences
+
+```
+Preferred communication style: Simple, everyday language.
+```
