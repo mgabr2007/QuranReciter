@@ -1,4 +1,4 @@
-// Authentic Quran audio API integration
+// Local and external Quran audio integration
 export interface AyahAudioData {
   audio: string;
   audioSecondary?: string[];
@@ -26,34 +26,54 @@ const testAudioUrl = async (url: string): Promise<boolean> => {
   }
 };
 
-export const getAyahAudio = async (surahId: number, ayahNumber: number): Promise<string> => {
-  console.log(`Fetching audio for Surah ${surahId}, Ayah ${ayahNumber}`);
+// Check if local audio file exists
+const checkLocalAudio = async (surahId: number, ayahNumber: number, reciter: string = 'alafasy'): Promise<string | null> => {
+  const filename = `${formatNumber(surahId, 3)}${formatNumber(ayahNumber, 3)}.mp3`;
+  const localUrl = `/audio/${reciter}/${filename}`;
   
-  // Use EveryAyah CDN directly - confirmed working with proper CORS headers
-  const audioUrl = `https://everyayah.com/data/Alafasy_128kbps/${formatNumber(surahId, 3)}${formatNumber(ayahNumber, 3)}.mp3`;
-  
-  console.log('Generated audio URL:', audioUrl);
-  
-  // Test URL accessibility
   try {
-    const response = await fetch(audioUrl, { method: 'HEAD' });
-    console.log('Audio URL test response:', response.status, response.statusText);
+    const response = await fetch(localUrl, { method: 'HEAD' });
     if (response.ok) {
-      console.log('✅ Audio URL verified accessible');
-    } else {
-      console.warn('⚠️ Audio URL returned error status:', response.status);
+      console.log('✅ Local audio file found:', localUrl);
+      return localUrl;
     }
   } catch (error) {
-    console.warn('⚠️ Audio URL test failed:', error);
+    console.log('⚠️ Local audio not available:', localUrl);
   }
+  
+  return null;
+};
+
+export const getAyahAudio = async (surahId: number, ayahNumber: number): Promise<string> => {
+  console.log(`🎵 Getting audio for Surah ${surahId}, Ayah ${ayahNumber}`);
+  
+  // First, try local audio file
+  const localAudio = await checkLocalAudio(surahId, ayahNumber, 'alafasy');
+  if (localAudio) {
+    console.log('🏠 Using local audio file:', localAudio);
+    return localAudio;
+  }
+  
+  // Fallback to external CDN
+  const audioUrl = `https://everyayah.com/data/Alafasy_128kbps/${formatNumber(surahId, 3)}${formatNumber(ayahNumber, 3)}.mp3`;
+  console.log('🌐 Using external audio:', audioUrl);
   
   return audioUrl;
 };
 
 export const getAlternativeAyahAudio = async (surahId: number, ayahNumber: number): Promise<string> => {
-  // Use EveryAyah CDN with alternative reciter
-  const alternativeUrl = `https://everyayah.com/data/AbdurRahmaanAs-Sudais_128kbps/${formatNumber(surahId, 3)}${formatNumber(ayahNumber, 3)}.mp3`;
+  console.log(`🎵 Getting alternative audio for Surah ${surahId}, Ayah ${ayahNumber}`);
   
-  console.log('Using alternative EveryAyah CDN:', alternativeUrl);
+  // First, try local alternative reciter
+  const localAudio = await checkLocalAudio(surahId, ayahNumber, 'abdul_basit');
+  if (localAudio) {
+    console.log('🏠 Using local alternative audio:', localAudio);
+    return localAudio;
+  }
+  
+  // Fallback to external CDN with alternative reciter
+  const alternativeUrl = `https://everyayah.com/data/Abdul_Basit_Murattal_192kbps/${formatNumber(surahId, 3)}${formatNumber(ayahNumber, 3)}.mp3`;
+  console.log('🌐 Using external alternative audio:', alternativeUrl);
+  
   return alternativeUrl;
 };
