@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio Test</title>
+</head>
+<body>
+    <h1>Quran Audio Test</h1>
+    <audio controls crossorigin="anonymous" id="testAudio">
+        <source src="https://everyayah.com/data/Alafasy_128kbps/001001.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+    
+    <script>
+        const audio = document.getElementById('testAudio');
+        
+        audio.addEventListener('loadstart', () => {
+            console.log('Load started');
+        });
+        
+        audio.addEventListener('loadedmetadata', () => {
+            console.log('Metadata loaded:', audio.duration);
+        });
+        
+        audio.addEventListener('canplay', () => {
+            console.log('Can play');
+        });
+        
+        audio.addEventListener('error', (e) => {
+            console.error('Audio error:', e, audio.error);
+        });
+        
+        // Test the URL directly
+        fetch('https://everyayah.com/data/Alafasy_128kbps/001001.mp3', {method: 'HEAD'})
+            .then(response => {
+                console.log('Fetch test:', response.status, response.statusText);
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+            });
+    </script>
+</body>
+</html>

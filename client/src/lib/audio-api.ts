@@ -32,7 +32,21 @@ export const getAyahAudio = async (surahId: number, ayahNumber: number): Promise
   // Use EveryAyah CDN directly - confirmed working with proper CORS headers
   const audioUrl = `https://everyayah.com/data/Alafasy_128kbps/${formatNumber(surahId, 3)}${formatNumber(ayahNumber, 3)}.mp3`;
   
-  console.log('Using EveryAyah CDN audio:', audioUrl);
+  console.log('Generated audio URL:', audioUrl);
+  
+  // Test URL accessibility
+  try {
+    const response = await fetch(audioUrl, { method: 'HEAD' });
+    console.log('Audio URL test response:', response.status, response.statusText);
+    if (response.ok) {
+      console.log('✅ Audio URL verified accessible');
+    } else {
+      console.warn('⚠️ Audio URL returned error status:', response.status);
+    }
+  } catch (error) {
+    console.warn('⚠️ Audio URL test failed:', error);
+  }
+  
   return audioUrl;
 };
 

@@ -55,118 +55,176 @@ export const useAudioPlayer = ({
   const tryLoadAudio = useCallback(async (url: string): Promise<boolean> => {
     return new Promise((resolve) => {
       if (!audioRef.current) {
-        console.error('No audio element available');
+        console.error('❌ No audio element available');
         resolve(false);
         return;
       }
 
       const audio = audioRef.current;
       let timeoutId: NodeJS.Timeout;
+      let resolved = false;
       
       const cleanup = () => {
         audio.removeEventListener('canplaythrough', onCanPlay);
+        audio.removeEventListener('loadedmetadata', onLoadedMetadata);
         audio.removeEventListener('loadeddata', onLoadedData);
         audio.removeEventListener('error', onError);
         audio.removeEventListener('loadstart', onLoadStart);
+        audio.removeEventListener('progress', onProgress);
         if (timeoutId) clearTimeout(timeoutId);
       };
 
+      const resolveOnce = (success: boolean) => {
+        if (!resolved) {
+          resolved = true;
+          cleanup();
+          resolve(success);
+        }
+      };
+
       const onCanPlay = () => {
-        console.log('Audio can play through:', url);
-        cleanup();
+        console.log('✅ Audio ready to play:', url);
         setState(prev => ({ 
           ...prev, 
           isLoading: false, 
-          duration: audio.duration || 0 
+          duration: audio.duration || 0,
+          error: null
         }));
         audio.volume = 0.8;
-        resolve(true);
+        resolveOnce(true);
+      };
+
+      const onLoadedMetadata = () => {
+        console.log('📊 Audio metadata loaded:', url, `Duration: ${audio.duration}s`);
+        // Metadata loaded, audio should be playable soon
       };
 
       const onLoadedData = () => {
-        console.log('Audio data loaded:', url);
-        // Continue to wait for canplaythrough
+        console.log('📥 Audio data loaded:', url);
+        // For some browsers, this might be enough to start playing
+        if (audio.readyState >= 2) { // HAVE_CURRENT_DATA
+          console.log('✅ Audio has sufficient data to play');
+          setState(prev => ({ 
+            ...prev, 
+            isLoading: false, 
+            duration: audio.duration || 0,
+            error: null
+          }));
+          audio.volume = 0.8;
+          resolveOnce(true);
+        }
       };
       
       const onError = (event: Event) => {
-        console.error('Audio loading error:', event, 'URL:', url);
+        console.error('❌ Audio loading error:', event);
         console.error('Audio error details:', audio.error);
-        cleanup();
-        resolve(false);
+        if (audio.error) {
+          console.error('Error code:', audio.error.code);
+          console.error('Error message:', audio.error.message);
+        }
+        resolveOnce(false);
       };
 
       const onLoadStart = () => {
-        console.log('Starting to load audio:', url);
+        console.log('🔄 Starting to load audio:', url);
+      };
+
+      const onProgress = () => {
+        if (audio.buffered.length > 0) {
+          const buffered = audio.buffered.end(0);
+          const duration = audio.duration || 0;
+          if (duration > 0) {
+            const percent = Math.round((buffered / duration) * 100);
+            console.log(`📡 Loading progress: ${percent}%`);
+          }
+        }
       };
       
       // Add event listeners
       audio.addEventListener('canplaythrough', onCanPlay);
+      audio.addEventListener('loadedmetadata', onLoadedMetadata);
       audio.addEventListener('loadeddata', onLoadedData);
       audio.addEventListener('error', onError);
       audio.addEventListener('loadstart', onLoadStart);
+      audio.addEventListener('progress', onProgress);
+      
+      // Reset and configure audio element
+      audio.pause();
+      audio.currentTime = 0;
       
       // Set audio properties for better compatibility
       audio.crossOrigin = 'anonymous';
       audio.preload = 'auto';
       
       try {
+        console.log('🎵 Setting audio source:', url);
         audio.src = url;
         audio.load();
-        console.log('Audio load initiated for:', url);
+        console.log('🔄 Audio load initiated successfully');
       } catch (loadError) {
-        console.error('Error setting audio src:', loadError);
-        cleanup();
-        resolve(false);
+        console.error('❌ Error setting audio src:', loadError);
+        resolveOnce(false);
         return;
       }
       
-      // Timeout after 15 seconds
+      // Timeout after 10 seconds (reduced for faster failover)
       timeoutId = setTimeout(() => {
-        console.warn('Audio loading timeout for:', url);
-        cleanup();
-        resolve(false);
-      }, 15000);
+        console.warn('⏰ Audio loading timeout after 10s for:', url);
+        resolveOnce(false);
+      }, 10000);
     });
   }, []);
 
   const loadAyah = useCallback(async (ayahIndex: number) => {
-    if (!ayahs[ayahIndex]) return;
+    if (!ayahs[ayahIndex]) {
+      console.warn('⚠️ No ayah found at index:', ayahIndex);
+      return;
+    }
 
+    console.log(`🎯 Loading ayah ${ayahIndex + 1} of ${ayahs.length}`);
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     const ayah = ayahs[ayahIndex];
     
     try {
-      console.log(`Loading audio for Surah ${ayah.surahId}, Ayah ${ayah.number}`);
+      console.log(`🕌 Loading audio for Surah ${ayah.surahId}, Ayah ${ayah.number}`);
+      console.log(`📖 Ayah text: ${ayah.text?.substring(0, 50)}...`);
       
-      // Get primary audio URL (no network verification to avoid timeouts)
+      // Get primary audio URL 
       const primaryUrl = await getAyahAudio(ayah.surahId, ayah.number);
-      console.log('Primary audio URL:', primaryUrl);
+      console.log('🎵 Primary audio URL:', primaryUrl);
       
-      // Try to load the audio directly
+      // Try to load the primary audio
+      console.log('🔄 Attempting to load primary audio source...');
       const success = await tryLoadAudio(primaryUrl);
       if (success) {
-        console.log('Primary audio loaded successfully');
+        console.log('✅ Primary audio loaded successfully!');
         return;
       }
       
-      console.log('Primary failed, trying alternative reciter...');
+      console.log('⚠️ Primary audio failed, trying alternative reciter...');
       const alternativeUrl = await getAlternativeAyahAudio(ayah.surahId, ayah.number);
-      console.log('Alternative audio URL:', alternativeUrl);
+      console.log('🎵 Alternative audio URL:', alternativeUrl);
       
+      console.log('🔄 Attempting to load alternative audio source...');
       const alternativeSuccess = await tryLoadAudio(alternativeUrl);
       if (alternativeSuccess) {
-        console.log('Alternative audio loaded successfully');
+        console.log('✅ Alternative audio loaded successfully!');
         return;
       }
       
-      throw new Error('Audio loading failed from all sources');
+      throw new Error('Audio loading failed from all sources - both primary and alternative failed');
     } catch (error: any) {
-      console.error('Failed to load audio:', error);
+      console.error('❌ Complete audio loading failure:', error);
+      console.error('📊 Failed ayah details:', {
+        surahId: ayah.surahId,
+        ayahNumber: ayah.number,
+        ayahText: ayah.text?.substring(0, 100)
+      });
       setState(prev => ({ 
         ...prev, 
         isLoading: false, 
-        error: `Audio unavailable. Please check your internet connection and try again.` 
+        error: `Unable to load audio for this ayah. The audio service may be temporarily unavailable.` 
       }));
     }
   }, [ayahs, tryLoadAudio]);
