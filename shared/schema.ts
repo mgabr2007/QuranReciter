@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, jsonb, timestamp, varchar, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
@@ -60,6 +60,44 @@ export const cachedAudioFiles = pgTable("cached_audio_files", {
   createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
 });
 
+// Database table for storing all Quran surahs
+export const surahs = pgTable("surahs", {
+  id: integer("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  nameArabic: varchar("name_arabic", { length: 200 }).notNull(),
+  nameTranslation: varchar("name_translation", { length: 200 }).notNull(),
+  totalAyahs: integer("total_ayahs").notNull(),
+  revelation: varchar("revelation", { length: 10 }).notNull(), // 'Meccan' or 'Medinan'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Database table for storing all ayahs (verses)
+export const ayahs = pgTable("ayahs", {
+  id: serial("id").primaryKey(),
+  surahId: integer("surah_id").notNull().references(() => surahs.id),
+  number: integer("number").notNull(), // ayah number within surah
+  text: text("text").notNull(), // Arabic text
+  translation: text("translation").notNull(), // English translation
+  textUthmani: text("text_uthmani"), // Uthmani script Arabic text
+  textSimple: text("text_simple"), // Simple Arabic text
+  translationSahih: text("translation_sahih"), // Sahih International translation
+  translationPickthall: text("translation_pickthall"), // Pickthall translation
+  translationYusufali: text("translation_yusufali"), // Yusuf Ali translation
+  juz: integer("juz"), // Juz/Para number
+  manzil: integer("manzil"), // Manzil number
+  page: integer("page"), // Mushaf page number
+  ruku: integer("ruku"), // Ruku number
+  hizbQuarter: integer("hizb_quarter"), // Hizb quarter
+  sajda: boolean("sajda").default(false), // Contains sajda
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  surahAyahIdx: index("surah_ayah_idx").on(table.surahId, table.number),
+  textSearchIdx: index("text_search_idx").on(table.text),
+  translationSearchIdx: index("translation_search_idx").on(table.translation),
+}));
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -86,6 +124,17 @@ export const insertCachedAudioFileSchema = createInsertSchema(cachedAudioFiles).
   lastChecked: true,
 });
 
+export const insertSurahSchema = createInsertSchema(surahs).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAyahSchema = createInsertSchema(ayahs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type UserPreferences = typeof userPreferences.$inferSelect;
@@ -96,6 +145,10 @@ export type BookmarkedAyah = typeof bookmarkedAyahs.$inferSelect;
 export type InsertBookmarkedAyah = z.infer<typeof insertBookmarkedAyahSchema>;
 export type CachedAudioFile = typeof cachedAudioFiles.$inferSelect;
 export type InsertCachedAudioFile = z.infer<typeof insertCachedAudioFileSchema>;
+export type Surah = typeof surahs.$inferSelect;
+export type InsertSurah = z.infer<typeof insertSurahSchema>;
+export type Ayah = typeof ayahs.$inferSelect;
+export type InsertAyah = z.infer<typeof insertAyahSchema>;
 
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
@@ -129,21 +182,13 @@ export const cachedAudioFilesRelations = relations(cachedAudioFiles, ({ one }) =
   // No direct relation to users since audio files are shared across all users
 }));
 
-// Quran data types
-export interface Surah {
-  id: number;
-  name: string;
-  nameArabic: string;
-  nameTranslation: string;
-  totalAyahs: number;
-  revelation: 'Meccan' | 'Medinan';
-}
+export const surahsRelations = relations(surahs, ({ many }) => ({
+  ayahs: many(ayahs),
+}));
 
-export interface Ayah {
-  number: number;
-  text: string;
-  translation: string;
-  surahId: number;
-  arabicText?: string;
-  englishTranslation?: string;
-}
+export const ayahsRelations = relations(ayahs, ({ one }) => ({
+  surah: one(surahs, {
+    fields: [ayahs.surahId],
+    references: [surahs.id],
+  }),
+}));
