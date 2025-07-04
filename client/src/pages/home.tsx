@@ -8,7 +8,7 @@ import { AyahDisplay } from "@/components/ayah-display";
 import { RecitationStatus } from "@/components/recitation-status";
 import { QuickActions } from "@/components/quick-actions";
 import { VerseSearch } from "@/components/verse-search";
-import { useAudioPlayer } from "@/hooks/use-audio-player";
+import { useSimpleAudio } from "@/hooks/use-simple-audio";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -138,7 +138,7 @@ export default function Home() {
   }, [preferences]);
 
   // Audio player hook
-  const audioPlayer = useAudioPlayer({
+  const audioPlayer = useSimpleAudio({
     ayahs: selectedAyahs,
     pauseDuration,
     autoRepeat,
@@ -325,11 +325,11 @@ export default function Home() {
           error={audioPlayer.error}
           onPlay={audioPlayer.play}
           onPause={audioPlayer.pause}
-          onPrevious={audioPlayer.previousAyah}
-          onNext={audioPlayer.nextAyah}
-          onRewind={() => audioPlayer.seek(Math.max(0, audioPlayer.currentTime - 10))}
-          onForward={() => audioPlayer.seek(Math.min(audioPlayer.duration, audioPlayer.currentTime + 10))}
-          onRepeat={audioPlayer.repeatCurrent}
+          onPrevious={audioPlayer.goToPrevious}
+          onNext={audioPlayer.goToNext}
+          onRewind={audioPlayer.rewind}
+          onForward={audioPlayer.forward}
+          onRepeat={audioPlayer.repeat}
           onSeek={audioPlayer.seek}
         />
 
