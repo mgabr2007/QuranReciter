@@ -4,39 +4,36 @@
     <title>Audio Test</title>
 </head>
 <body>
-    <h1>Quran Audio Test</h1>
-    <audio controls crossorigin="anonymous" id="testAudio">
-        <source src="https://everyayah.com/data/Alafasy_128kbps/001001.mp3" type="audio/mpeg">
-        Your browser does not support the audio element.
+    <h1>Direct Audio Test</h1>
+    <audio controls preload="metadata">
+        <source src="/audio/alafasy/001001.mp3" type="audio/mpeg">
+        Your browser does not support audio.
     </audio>
     
+    <h2>Test Different Files</h2>
+    <button onclick="testAudio('001001')">Test Al-Fatiha Ayah 1</button>
+    <button onclick="testAudio('001002')">Test Al-Fatiha Ayah 2</button>
+    <button onclick="testAudio('002001')">Test Al-Baqarah Ayah 1</button>
+    
+    <div id="result"></div>
+    
     <script>
-        const audio = document.getElementById('testAudio');
-        
-        audio.addEventListener('loadstart', () => {
-            console.log('Load started');
-        });
-        
-        audio.addEventListener('loadedmetadata', () => {
-            console.log('Metadata loaded:', audio.duration);
-        });
-        
-        audio.addEventListener('canplay', () => {
-            console.log('Can play');
-        });
-        
-        audio.addEventListener('error', (e) => {
-            console.error('Audio error:', e, audio.error);
-        });
-        
-        // Test the URL directly
-        fetch('https://everyayah.com/data/Alafasy_128kbps/001001.mp3', {method: 'HEAD'})
-            .then(response => {
-                console.log('Fetch test:', response.status, response.statusText);
-            })
-            .catch(error => {
-                console.error('Fetch error:', error);
+        function testAudio(filename) {
+            const audio = new Audio(`/audio/alafasy/${filename}.mp3`);
+            const result = document.getElementById('result');
+            
+            result.innerHTML = `Testing ${filename}...`;
+            
+            audio.addEventListener('loadeddata', () => {
+                result.innerHTML += `<br>✅ ${filename} loaded successfully`;
             });
+            
+            audio.addEventListener('error', (e) => {
+                result.innerHTML += `<br>❌ ${filename} failed to load: ${e.message}`;
+            });
+            
+            audio.load();
+        }
     </script>
 </body>
 </html>

@@ -452,8 +452,11 @@ export const useAudioPlayer = ({
   // Load first ayah on mount
   useEffect(() => {
     if (ayahs.length > 0) {
-      console.log('Loading first ayah on mount, ayahs:', ayahs.length);
+      console.log('🏁 Loading first ayah on mount, ayahs count:', ayahs.length);
+      console.log('📖 First ayah details:', ayahs[0]);
       loadAyah(0);
+    } else {
+      console.log('⚠️ No ayahs available for loading');
     }
   }, [ayahs, loadAyah]);
 
