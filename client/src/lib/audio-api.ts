@@ -26,19 +26,23 @@ const testAudioUrl = async (url: string): Promise<boolean> => {
   }
 };
 
-// Check if local audio file exists
+// Check if local audio file exists via API endpoint
 const checkLocalAudio = async (surahId: number, ayahNumber: number, reciter: string = 'alafasy'): Promise<string | null> => {
   const filename = `${formatNumber(surahId, 3)}${formatNumber(ayahNumber, 3)}.mp3`;
-  const localUrl = `/audio/${reciter}/${filename}`;
   
   try {
-    const response = await fetch(localUrl, { method: 'HEAD' });
+    // Check via API endpoint instead of direct file access
+    const response = await fetch(`/api/audio/check/${reciter}/${filename}`);
     if (response.ok) {
-      console.log('✅ Local audio file found:', localUrl);
-      return localUrl;
+      const data = await response.json();
+      if (data.exists) {
+        const localUrl = `/audio/${reciter}/${filename}`;
+        console.log('✅ Local audio file available:', localUrl);
+        return localUrl;
+      }
     }
   } catch (error) {
-    console.log('⚠️ Local audio not available:', localUrl);
+    console.log('⚠️ Local audio check failed, using external source');
   }
   
   return null;

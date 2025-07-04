@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUserPreferencesSchema, insertRecitationSessionSchema, insertBookmarkedAyahSchema } from "@shared/schema";
+import { promises as fs } from 'fs';
+import { join } from 'path';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Quran data routes
@@ -180,6 +182,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Bookmark deleted" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete bookmark" });
+    }
+  });
+
+  // Audio file checking route
+  app.get("/api/audio/check/:reciter/:filename", async (req, res) => {
+    try {
+      const { reciter, filename } = req.params;
+      const audioPath = join(process.cwd(), 'public', 'audio', reciter, filename);
+      
+      try {
+        await fs.access(audioPath);
+        res.json({ exists: true, path: `/audio/${reciter}/${filename}` });
+      } catch {
+        res.json({ exists: false });
+      }
+    } catch (error) {
+      res.status(500).json({ exists: false, error: "Server error" });
     }
   });
 
