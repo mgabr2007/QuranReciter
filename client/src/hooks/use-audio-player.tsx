@@ -156,11 +156,28 @@ export const useAudioPlayer = ({
       audio.crossOrigin = 'anonymous';
       audio.preload = 'auto';
       
+      // Log current audio state
+      console.log('🔍 Audio element state before loading:', {
+        readyState: audio.readyState,
+        networkState: audio.networkState,
+        error: audio.error,
+        src: audio.src
+      });
+      
       try {
         console.log('🎵 Setting audio source:', url);
         audio.src = url;
+        console.log('🔄 Calling audio.load()...');
         audio.load();
-        console.log('🔄 Audio load initiated successfully');
+        console.log('✅ Audio load initiated successfully');
+        
+        // Log state after load
+        console.log('🔍 Audio element state after load:', {
+          readyState: audio.readyState,
+          networkState: audio.networkState,
+          error: audio.error,
+          src: audio.src
+        });
       } catch (loadError) {
         console.error('❌ Error setting audio src:', loadError);
         resolveOnce(false);
