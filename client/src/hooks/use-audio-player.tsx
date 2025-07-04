@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Ayah } from "@shared/schema";
-import { getAyahAudio, getAlternativeAyahAudio } from "@/lib/audio-api";
+import { getSimpleAudioUrl, getSimpleAlternativeAudioUrl } from "@/lib/simple-audio";
 
 interface UseAudioPlayerProps {
   ayahs: Ayah[];
@@ -207,8 +207,8 @@ export const useAudioPlayer = ({
       console.log(`🕌 Loading audio for Surah ${ayah.surahId}, Ayah ${ayah.number}`);
       console.log(`📖 Ayah text: ${ayah.text?.substring(0, 50)}...`);
       
-      // Get primary audio URL 
-      const primaryUrl = await getAyahAudio(ayah.surahId, ayah.number);
+      // Get primary audio URL (simple, no API calls)
+      const primaryUrl = getSimpleAudioUrl(ayah.surahId, ayah.number);
       console.log('🎵 Primary audio URL:', primaryUrl);
       
       // Try to load the primary audio
@@ -220,7 +220,7 @@ export const useAudioPlayer = ({
       }
       
       console.log('⚠️ Primary audio failed, trying alternative reciter...');
-      const alternativeUrl = await getAlternativeAyahAudio(ayah.surahId, ayah.number);
+      const alternativeUrl = getSimpleAlternativeAudioUrl(ayah.surahId, ayah.number);
       console.log('🎵 Alternative audio URL:', alternativeUrl);
       
       console.log('🔄 Attempting to load alternative audio source...');

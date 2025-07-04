@@ -185,22 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Audio file checking route
-  app.get("/api/audio/check/:reciter/:filename", async (req, res) => {
-    try {
-      const { reciter, filename } = req.params;
-      const audioPath = join(process.cwd(), 'public', 'audio', reciter, filename);
-      
-      try {
-        await fs.access(audioPath);
-        res.json({ exists: true, path: `/audio/${reciter}/${filename}` });
-      } catch {
-        res.json({ exists: false });
-      }
-    } catch (error) {
-      res.status(500).json({ exists: false, error: "Server error" });
-    }
-  });
+  // Audio file checking route removed to eliminate infinite loop
 
   // Audio caching routes
   app.post("/api/audio/preload/:surahId", async (req, res) => {
