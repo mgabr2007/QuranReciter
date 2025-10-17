@@ -325,7 +325,7 @@ export default function Home() {
           pauseDuration={pauseDuration}
           surahName={currentSurah ? getSurahDisplayName(currentSurah) : ""}
           currentAyahNumber={audioPlayer.currentAyah?.number || 1}
-          totalAyahs={selectedAyahs.length}
+          totalAyahs={currentSurah?.totalAyahs || selectedAyahs.length}
           error={audioPlayer.error}
           onPlay={audioPlayer.play}
           onPause={audioPlayer.pause}
@@ -342,7 +342,7 @@ export default function Home() {
           currentAyah={audioPlayer.currentAyah}
           surahName={currentSurah ? getSurahDisplayName(currentSurah) : ""}
           currentAyahNumber={audioPlayer.currentAyah?.number || 1}
-          totalAyahs={selectedAyahs.length}
+          totalAyahs={currentSurah?.totalAyahs || selectedAyahs.length}
           isPlaying={audioPlayer.isPlaying}
           showTranslation={showTranslation}
           onTranslationToggle={setShowTranslation}
