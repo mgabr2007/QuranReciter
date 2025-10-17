@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import type { Surah } from "@shared/schema";
 import { getSurahDisplayName, getAyahRange } from "@/lib/quran-data";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface SurahSelectorProps {
   selectedSurah: number;
@@ -20,6 +21,7 @@ export const SurahSelector = ({
   endAyah,
   onSelectionChange,
 }: SurahSelectorProps) => {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   
   useEffect(() => {
@@ -95,7 +97,7 @@ export const SurahSelector = ({
     return (
       <Card className="bg-white rounded-xl shadow-sm border border-red-200">
         <CardContent className="p-6">
-          <p className="text-red-600">Failed to load surahs. Please try again.</p>
+          <p className="text-red-600">{t('failedToLoadSurahs')}</p>
         </CardContent>
       </Card>
     );
@@ -104,15 +106,15 @@ export const SurahSelector = ({
   return (
     <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
       <CardContent className="p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Select Surah</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('selectSurah')}</h2>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <Label className="block text-sm font-medium text-gray-700 mb-2">
-              Surah
+              {t('surah')}
             </Label>
             <Select value={selectedSurah.toString()} onValueChange={handleSurahChange}>
               <SelectTrigger className="w-full focus:ring-2 focus:ring-islamic-green focus:border-transparent">
-                <SelectValue placeholder={surahs.length > 0 ? "Select a Surah" : "Loading surahs..."} />
+                <SelectValue placeholder={surahs.length > 0 ? t('selectASurah') : t('loadingSurahs')} />
               </SelectTrigger>
               <SelectContent>
                 {surahs.length > 0 ? (
@@ -122,19 +124,19 @@ export const SurahSelector = ({
                     </SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="loading" disabled>Loading surahs...</SelectItem>
+                  <SelectItem value="loading" disabled>{t('loadingSurahs')}</SelectItem>
                 )}
               </SelectContent>
             </Select>
           </div>
           <div>
             <Label className="block text-sm font-medium text-gray-700 mb-2">
-              Ayah Range
+              {t('ayahRange')}
             </Label>
             <div className="flex space-x-2">
               <Input
                 type="number"
-                placeholder="From"
+                placeholder={t('from')}
                 min="1"
                 max={currentSurah?.totalAyahs || 1}
                 value={startAyah}
@@ -143,7 +145,7 @@ export const SurahSelector = ({
               />
               <Input
                 type="number"
-                placeholder="To"
+                placeholder={t('to')}
                 min="1"
                 max={currentSurah?.totalAyahs || 1}
                 value={endAyah}
@@ -153,7 +155,7 @@ export const SurahSelector = ({
             </div>
             {currentSurah && (
               <p className="text-xs text-gray-500 mt-1">
-                Total ayahs in {currentSurah.name}: {currentSurah.totalAyahs}
+                {t('totalAyahsIn', { surah: currentSurah.name, count: currentSurah.totalAyahs })}
               </p>
             )}
           </div>

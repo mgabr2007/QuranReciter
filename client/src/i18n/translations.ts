@@ -10,11 +10,17 @@ export const translations = {
     
     // Home Page
     selectSurah: "Select Surah",
+    selectASurah: "Select a Surah",
+    surah: "Surah",
     selectRange: "Select Range",
+    ayahRange: "Ayah Range",
     from: "From",
     to: "To",
     ayah: "Ayah",
     ayahs: "Ayahs",
+    totalAyahsIn: "Total ayahs in {{surah}}: {{count}}",
+    loadingSurahs: "Loading surahs...",
+    failedToLoadSurahs: "Failed to load surahs. Please try again.",
     
     // Pause Settings
     pauseSettings: "Pause Settings",
@@ -140,11 +146,17 @@ export const translations = {
     
     // Home Page
     selectSurah: "اختر السورة",
+    selectASurah: "اختر سورة",
+    surah: "السورة",
     selectRange: "اختر النطاق",
+    ayahRange: "نطاق الآيات",
     from: "من",
     to: "إلى",
     ayah: "آية",
     ayahs: "آيات",
+    totalAyahsIn: "إجمالي الآيات في {{surah}}: {{count}}",
+    loadingSurahs: "جاري تحميل السور...",
+    failedToLoadSurahs: "فشل تحميل السور. يرجى المحاولة مرة أخرى.",
     
     // Pause Settings
     pauseSettings: "إعدادات الوقفة",
