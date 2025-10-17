@@ -29,18 +29,30 @@ interface QuranApiResponse {
   data: QuranApiSurah;
 }
 
-async function fetchSurahData(surahNumber: number): Promise<QuranApiSurah | null> {
+async function fetchSurahData(surahNumber: number): Promise<{ arabic: QuranApiSurah; english: QuranApiSurah } | null> {
   try {
     console.log(`Fetching Surah ${surahNumber}...`);
-    const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`);
     
-    if (!response.ok) {
-      console.error(`Failed to fetch Surah ${surahNumber}: ${response.status}`);
+    // Fetch Arabic text
+    const arabicResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`);
+    if (!arabicResponse.ok) {
+      console.error(`Failed to fetch Arabic for Surah ${surahNumber}: ${arabicResponse.status}`);
       return null;
     }
+    const arabicData: QuranApiResponse = await arabicResponse.json();
     
-    const data: QuranApiResponse = await response.json();
-    return data.data;
+    // Fetch English translation (Sahih International)
+    const englishResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/en.sahih`);
+    if (!englishResponse.ok) {
+      console.error(`Failed to fetch English for Surah ${surahNumber}: ${englishResponse.status}`);
+      return null;
+    }
+    const englishData: QuranApiResponse = await englishResponse.json();
+    
+    return {
+      arabic: arabicData.data,
+      english: englishData.data
+    };
   } catch (error) {
     console.error(`Error fetching Surah ${surahNumber}:`, error);
     return null;
@@ -75,13 +87,16 @@ async function populateAyahs() {
         continue;
       }
       
-      // Prepare ayah records for insertion
-      const ayahRecords = surahData.ayahs.map((ayah) => ({
-        surahId,
-        number: ayah.numberInSurah,
-        text: ayah.text,
-        translation: null, // We'll fetch translations separately if needed
-      }));
+      // Prepare ayah records for insertion - match Arabic with English
+      const ayahRecords = surahData.arabic.ayahs.map((arabicAyah, index) => {
+        const englishAyah = surahData.english.ayahs[index];
+        return {
+          surahId,
+          number: arabicAyah.numberInSurah,
+          text: arabicAyah.text,
+          translation: englishAyah.text,
+        };
+      });
       
       // Insert ayahs into database
       await db.insert(ayahs).values(ayahRecords);
