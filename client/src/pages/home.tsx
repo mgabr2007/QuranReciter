@@ -41,7 +41,7 @@ export default function Home() {
 
   // Load current surah
   const { data: currentSurah } = useQuery<Surah>({
-    queryKey: ["/api/surahs", selectedSurah],
+    queryKey: [`/api/surahs/${selectedSurah}`],
     enabled: !!selectedSurah,
   });
 

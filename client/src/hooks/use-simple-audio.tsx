@@ -232,18 +232,18 @@ export const useSimpleAudio = ({
     }
   }, [goToNext]);
 
-  // Load ayah when index changes
+  // Load ayah when index changes OR when ayahs first become available
   useEffect(() => {
     console.log('Load effect triggered:', { 
-      ayahsLength: ayahsRef.current.length, 
+      ayahsLength: ayahs.length, 
       currentIndex: state.currentAyahIndex,
       hasAudioRef: !!audioRef.current 
     });
     
-    if (ayahsRef.current.length > 0) {
+    if (ayahs.length > 0) {
       loadCurrentAyah();
     }
-  }, [state.currentAyahIndex, loadCurrentAyah]);
+  }, [state.currentAyahIndex, ayahs.length, loadCurrentAyah]);
 
   // Clean up timeouts
   useEffect(() => {
