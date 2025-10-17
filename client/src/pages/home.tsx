@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { PageLayout } from "@/components/page-layout";
+import { PageHeader } from "@/components/page-header";
 import { SurahSelector } from "@/components/surah-selector";
 import { PauseSettings } from "@/components/pause-settings";
 import { AudioPlayer } from "@/components/audio-player";
@@ -255,51 +257,44 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--surface))]">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-islamic-green rounded-lg flex items-center justify-center">
-                <span className="text-white text-lg font-arabic">ق</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">Tilawah Assistant</h1>
-                <p className="text-sm text-gray-600">Quran Recitation with Pause</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-gray-600 hover:text-gray-900"
-                onClick={() => setShowVerseSearch(true)}
-              >
-                <Search className="h-4 w-4 mr-2" />
-                Search
+    <>
+      <PageHeader
+        icon={<span className="text-white text-lg font-arabic">ق</span>}
+        title="Tilawah Assistant"
+        subtitle="Quran Recitation with Pause"
+        actions={
+          <>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-gray-600 hover:text-gray-900"
+              onClick={() => setShowVerseSearch(true)}
+              data-testid="button-search"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Search
+            </Button>
+            <Link href="/bookmarks">
+              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900" data-testid="link-bookmarks">
+                <Heart className="h-4 w-4 mr-2" />
+                Bookmarks
               </Button>
-              <Link href="/bookmarks">
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-                  <Heart className="h-4 w-4 mr-2" />
-                  Bookmarks
-                </Button>
-              </Link>
-              <Link href="/history">
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-                  <HistoryIcon className="h-4 w-4 mr-2" />
-                  History
-                </Button>
-              </Link>
-              <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600">
-                <Settings className="h-5 w-5" />
+            </Link>
+            <Link href="/history">
+              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900" data-testid="link-history">
+                <HistoryIcon className="h-4 w-4 mr-2" />
+                History
               </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+            </Link>
+            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600" data-testid="button-settings">
+              <Settings className="h-5 w-5" />
+            </Button>
+          </>
+        }
+      />
 
-      <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+      <PageLayout>
+        <div className="space-y-6">
         {/* Surah Selector */}
         <SurahSelector
           selectedSurah={selectedSurah}
@@ -368,7 +363,8 @@ export default function Home() {
           onReset={handleReset}
           onBookmark={handleBookmark}
         />
-      </main>
+        </div>
+      </PageLayout>
 
       {/* Mobile Mini Player */}
       {audioPlayer.isPlaying && (
@@ -394,6 +390,6 @@ export default function Home() {
           onClose={() => setShowVerseSearch(false)}
         />
       )}
-    </div>
+    </>
   );
 }
