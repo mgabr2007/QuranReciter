@@ -269,14 +269,27 @@ export const useSimpleAudio = ({
           }
         }, 1000);
         
-        // Start pause between ayahs
+        // Start pause between ayahs - use ref-based approach to avoid recreating event listeners
         pauseTimeoutRef.current = setTimeout(() => {
           if (countdownIntervalRef.current) {
             clearInterval(countdownIntervalRef.current);
             countdownIntervalRef.current = null;
           }
-          setState(prev => ({ ...prev, isPaused: false, pauseCountdown: 0 }));
-          goToNext();
+          
+          // Advance to next ayah using setState with functional update
+          setState(prev => {
+            const nextIndex = prev.currentAyahIndex + 1;
+            if (nextIndex < ayahsRef.current.length) {
+              onAyahChangeRef.current?.(nextIndex);
+              return { ...prev, currentAyahIndex: nextIndex, isPaused: false, pauseCountdown: 0 };
+            } else if (autoRepeatRef.current) {
+              onAyahChangeRef.current?.(0);
+              return { ...prev, currentAyahIndex: 0, isPaused: false, pauseCountdown: 0 };
+            } else {
+              onSessionCompleteRef.current?.();
+              return { ...prev, sessionCompleted: true, isPaused: false, pauseCountdown: 0 };
+            }
+          });
         }, totalPause * 1000);
       };
       
@@ -310,7 +323,7 @@ export const useSimpleAudio = ({
         audio.removeEventListener('canplaythrough', onCanPlayThrough);
       };
     }
-  }, [goToNext]);
+  }, []); // Empty dependency array - event listeners only created once
 
   // Load ayah when index changes OR when ayahs first become available
   useEffect(() => {
