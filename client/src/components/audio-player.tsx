@@ -92,30 +92,6 @@ export const AudioPlayer = ({
     <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
       <CardContent className="p-6">
         <div className="space-y-6">
-          {/* Current Ayah Display */}
-          <div className="text-center">
-            <div className="bg-gray-50 rounded-lg p-6 mb-4">
-              <div className="text-right mb-4">
-                <p 
-                  className="font-arabic text-3xl text-islamic-dark leading-loose"
-                  dir="rtl"
-                >
-                  {currentAyah?.text || t('selectSurahToBegin')}
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-gray-600 italic">
-                  {currentAyah?.translation || t('translationWillAppear')}
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-center space-x-4 text-sm text-gray-500">
-              <span>{surahName}</span>
-              <span>•</span>
-              <span>Ayah {currentAyahNumber} of {totalAyahs}</span>
-            </div>
-          </div>
-
           {/* Progress Bar */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm text-gray-500">
