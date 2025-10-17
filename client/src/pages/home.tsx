@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { SurahSelector } from "@/components/surah-selector";
@@ -54,10 +54,12 @@ export default function Home() {
     queryKey: ["/api/bookmarks"],
   });
 
-  // Get ayahs in selected range
-  const selectedAyahs = allAyahs.filter(
-    ayah => ayah.number >= startAyah && ayah.number <= endAyah
-  );
+  // Get ayahs in selected range - memoized to prevent recreation on every render
+  const selectedAyahs = useMemo(() => {
+    return allAyahs.filter(
+      ayah => ayah.number >= startAyah && ayah.number <= endAyah
+    );
+  }, [allAyahs, startAyah, endAyah]);
 
   console.log('Ayah loading debug:', { 
     selectedSurah, 

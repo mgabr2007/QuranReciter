@@ -30,6 +30,13 @@ export const useSimpleAudio = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
+  // Refs to store latest callbacks and values to avoid stale closures
+  const onAyahChangeRef = useRef(onAyahChange);
+  const onSessionCompleteRef = useRef(onSessionComplete);
+  const ayahsRef = useRef(ayahs);
+  const autoRepeatRef = useRef(autoRepeat);
+  const pauseDurationRef = useRef(pauseDuration);
+  
   const [state, setState] = useState<AudioState>({
     isPlaying: false,
     currentAyahIndex: 0,
@@ -41,6 +48,15 @@ export const useSimpleAudio = ({
     sessionCompleted: false,
   });
 
+  // Update refs when props change
+  useEffect(() => {
+    onAyahChangeRef.current = onAyahChange;
+    onSessionCompleteRef.current = onSessionComplete;
+    ayahsRef.current = ayahs;
+    autoRepeatRef.current = autoRepeat;
+    pauseDurationRef.current = pauseDuration;
+  }, [onAyahChange, onSessionComplete, ayahs, autoRepeat, pauseDuration]);
+
   const formatNumber = (num: number, padding: number): string => {
     return num.toString().padStart(padding, '0');
   };
@@ -50,10 +66,12 @@ export const useSimpleAudio = ({
     return `/audio/alafasy/${filename}`;
   };
 
-  const getCurrentAyah = () => ayahs[state.currentAyahIndex];
+  const getCurrentAyah = useCallback(() => {
+    return ayahsRef.current[state.currentAyahIndex];
+  }, [state.currentAyahIndex]);
 
   const loadCurrentAyah = useCallback(() => {
-    const ayah = getCurrentAyah();
+    const ayah = ayahsRef.current[state.currentAyahIndex];
     if (!ayah || !audioRef.current) return;
 
     const audioUrl = getAudioUrl(ayah.surahId, ayah.number);
@@ -63,7 +81,7 @@ export const useSimpleAudio = ({
     
     audioRef.current.src = audioUrl;
     audioRef.current.load();
-  }, [state.currentAyahIndex, ayahs]);
+  }, [state.currentAyahIndex]);
 
   const play = useCallback(() => {
     if (!audioRef.current) return;
@@ -86,25 +104,30 @@ export const useSimpleAudio = ({
     setState(prev => ({ ...prev, isPlaying: false }));
   }, []);
 
+  // Use functional setState to read current state instead of closure
   const goToNext = useCallback(() => {
-    const nextIndex = state.currentAyahIndex + 1;
-    if (nextIndex < ayahs.length) {
-      setState(prev => ({ ...prev, currentAyahIndex: nextIndex }));
-      onAyahChange?.(nextIndex);
-    } else if (autoRepeat) {
-      setState(prev => ({ ...prev, currentAyahIndex: 0 }));
-      onAyahChange?.(0);
-    } else {
-      setState(prev => ({ ...prev, sessionCompleted: true }));
-      onSessionComplete?.();
-    }
-  }, [state.currentAyahIndex, ayahs.length, autoRepeat, onAyahChange, onSessionComplete]);
+    setState(prev => {
+      const nextIndex = prev.currentAyahIndex + 1;
+      if (nextIndex < ayahsRef.current.length) {
+        onAyahChangeRef.current?.(nextIndex);
+        return { ...prev, currentAyahIndex: nextIndex };
+      } else if (autoRepeatRef.current) {
+        onAyahChangeRef.current?.(0);
+        return { ...prev, currentAyahIndex: 0 };
+      } else {
+        onSessionCompleteRef.current?.();
+        return { ...prev, sessionCompleted: true };
+      }
+    });
+  }, []);
 
   const goToPrevious = useCallback(() => {
-    const prevIndex = Math.max(0, state.currentAyahIndex - 1);
-    setState(prev => ({ ...prev, currentAyahIndex: prevIndex }));
-    onAyahChange?.(prevIndex);
-  }, [state.currentAyahIndex, onAyahChange]);
+    setState(prev => {
+      const prevIndex = Math.max(0, prev.currentAyahIndex - 1);
+      onAyahChangeRef.current?.(prevIndex);
+      return { ...prev, currentAyahIndex: prevIndex };
+    });
+  }, []);
 
   const seek = useCallback((time: number) => {
     if (!audioRef.current) return;
@@ -127,12 +150,11 @@ export const useSimpleAudio = ({
     play();
   }, [play]);
 
-  // Initialize audio element
+  // Initialize audio element - use refs for event handlers
   useEffect(() => {
     if (!audioRef.current) {
       audioRef.current = new Audio();
       
-      // Audio event listeners
       const audio = audioRef.current;
       
       const onLoadStart = () => {
@@ -159,7 +181,7 @@ export const useSimpleAudio = ({
         pauseTimeoutRef.current = setTimeout(() => {
           setState(prev => ({ ...prev, isPaused: false }));
           goToNext();
-        }, pauseDuration * 1000);
+        }, pauseDurationRef.current * 1000);
       };
       
       const onError = () => {
@@ -192,14 +214,14 @@ export const useSimpleAudio = ({
         audio.removeEventListener('canplaythrough', onCanPlayThrough);
       };
     }
-  }, [goToNext, pauseDuration]);
+  }, [goToNext]);
 
-  // Load ayah when index changes
+  // Load ayah when index changes - only depend on index
   useEffect(() => {
-    if (ayahs.length > 0) {
+    if (ayahsRef.current.length > 0) {
       loadCurrentAyah();
     }
-  }, [state.currentAyahIndex, ayahs, loadCurrentAyah]);
+  }, [state.currentAyahIndex, loadCurrentAyah]);
 
   // Clean up timeouts
   useEffect(() => {
@@ -220,19 +242,19 @@ export const useSimpleAudio = ({
   }, [pause]);
 
   const skipToAyah = useCallback((index: number) => {
-    if (index >= 0 && index < ayahs.length) {
+    if (index >= 0 && index < ayahsRef.current.length) {
       setState(prev => ({ ...prev, currentAyahIndex: index }));
-      onAyahChange?.(index);
+      onAyahChangeRef.current?.(index);
     }
-  }, [ayahs.length, onAyahChange]);
+  }, []);
 
   const getCompletedAyahs = useCallback(() => {
     return state.currentAyahIndex;
   }, [state.currentAyahIndex]);
 
   const getRemainingAyahs = useCallback(() => {
-    return ayahs.length - state.currentAyahIndex - 1;
-  }, [ayahs.length, state.currentAyahIndex]);
+    return ayahsRef.current.length - state.currentAyahIndex - 1;
+  }, [state.currentAyahIndex]);
 
   const getSessionTime = useCallback(() => {
     return Math.floor(state.currentTime);
