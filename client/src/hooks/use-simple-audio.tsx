@@ -72,10 +72,13 @@ export const useSimpleAudio = ({
 
   const loadCurrentAyah = useCallback(() => {
     const ayah = ayahsRef.current[state.currentAyahIndex];
-    if (!ayah || !audioRef.current) return;
+    if (!ayah || !audioRef.current) {
+      console.log('Cannot load ayah:', { ayah, hasAudioRef: !!audioRef.current });
+      return;
+    }
 
     const audioUrl = getAudioUrl(ayah.surahId, ayah.number);
-    console.log(`Loading ayah ${ayah.number} from ${audioUrl}`);
+    console.log(`Loading ayah ${ayah.number} from ${audioUrl}`, { surahId: ayah.surahId, ayahNumber: ayah.number });
     
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
@@ -84,8 +87,21 @@ export const useSimpleAudio = ({
   }, [state.currentAyahIndex]);
 
   const play = useCallback(() => {
-    if (!audioRef.current) return;
+    if (!audioRef.current) {
+      console.error('No audio element');
+      return;
+    }
     
+    if (!audioRef.current.src) {
+      console.error('No audio source loaded. Current src:', audioRef.current.src);
+      setState(prev => ({ 
+        ...prev, 
+        error: 'No audio loaded' 
+      }));
+      return;
+    }
+    
+    console.log('Starting playback, src:', audioRef.current.src);
     setState(prev => ({ ...prev, isPlaying: true, error: null }));
     audioRef.current.play().catch(error => {
       console.error('Play failed:', error);
@@ -216,12 +232,18 @@ export const useSimpleAudio = ({
     }
   }, [goToNext]);
 
-  // Load ayah when index changes - only depend on index
+  // Load ayah when index changes OR when ayahs become available
   useEffect(() => {
+    console.log('Load effect triggered:', { 
+      ayahsLength: ayahsRef.current.length, 
+      currentIndex: state.currentAyahIndex,
+      hasAudioRef: !!audioRef.current 
+    });
+    
     if (ayahsRef.current.length > 0) {
       loadCurrentAyah();
     }
-  }, [state.currentAyahIndex, loadCurrentAyah]);
+  }, [state.currentAyahIndex, loadCurrentAyah, ayahs.length]);
 
   // Clean up timeouts
   useEffect(() => {
