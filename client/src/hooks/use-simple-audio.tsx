@@ -29,6 +29,7 @@ export const useSimpleAudio = ({
 }: UseSimpleAudioProps) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const shouldAutoPlayRef = useRef(false);
   
   // Refs to store latest callbacks and values to avoid stale closures
   const onAyahChangeRef = useRef(onAyahChange);
@@ -102,6 +103,7 @@ export const useSimpleAudio = ({
     }
     
     console.log('Starting playback, src:', audioRef.current.src);
+    shouldAutoPlayRef.current = true;
     setState(prev => ({ ...prev, isPlaying: true, error: null }));
     audioRef.current.play().catch(error => {
       console.error('Play failed:', error);
@@ -116,6 +118,7 @@ export const useSimpleAudio = ({
   const pause = useCallback(() => {
     if (!audioRef.current) return;
     
+    shouldAutoPlayRef.current = false;
     audioRef.current.pause();
     setState(prev => ({ ...prev, isPlaying: false }));
   }, []);
@@ -184,6 +187,19 @@ export const useSimpleAudio = ({
           duration: audio.duration || 0,
           error: null 
         }));
+        
+        // Auto-play if we should continue playing
+        if (shouldAutoPlayRef.current && audio.src) {
+          console.log('Auto-playing next ayah after load');
+          audio.play().catch(error => {
+            console.error('Auto-play failed:', error);
+            setState(prev => ({ 
+              ...prev, 
+              isPlaying: false, 
+              error: 'Failed to auto-play audio' 
+            }));
+          });
+        }
       };
       
       const onTimeUpdate = () => {
@@ -257,6 +273,7 @@ export const useSimpleAudio = ({
   const progress = state.duration > 0 ? (state.currentTime / state.duration) * 100 : 0;
 
   const stop = useCallback(() => {
+    shouldAutoPlayRef.current = false;
     pause();
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
