@@ -308,6 +308,7 @@ export default function Home() {
           pauseDuration={pauseDuration}
           autoRepeat={autoRepeat}
           pauseCountdown={audioPlayer.pauseCountdown}
+          lastAyahDuration={audioPlayer.lastAyahDuration}
           onPauseDurationChange={handlePauseDurationChange}
           onAutoRepeatChange={handleAutoRepeatChange}
         />

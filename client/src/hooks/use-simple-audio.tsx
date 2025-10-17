@@ -19,6 +19,7 @@ interface AudioState {
   error: string | null;
   sessionCompleted: boolean;
   pauseCountdown: number;
+  lastAyahDuration: number;
 }
 
 export const useSimpleAudio = ({
@@ -50,6 +51,7 @@ export const useSimpleAudio = ({
     error: null,
     sessionCompleted: false,
     pauseCountdown: 0,
+    lastAyahDuration: 0,
   });
 
   // Update refs when props change
@@ -221,11 +223,20 @@ export const useSimpleAudio = ({
       };
       
       const onEnded = () => {
-        const pauseSeconds = pauseDurationRef.current;
-        setState(prev => ({ ...prev, isPlaying: false, isPaused: true, pauseCountdown: pauseSeconds }));
+        const ayahDuration = Math.ceil(audio.duration); // Duration of ayah that just finished (rounded up)
+        const extraPause = pauseDurationRef.current; // Extra pause time configured by user
+        const totalPause = ayahDuration + extraPause; // Total pause = ayah duration + extra
+        
+        setState(prev => ({ 
+          ...prev, 
+          isPlaying: false, 
+          isPaused: true, 
+          pauseCountdown: totalPause,
+          lastAyahDuration: ayahDuration
+        }));
         
         // Start countdown interval
-        let remaining = pauseSeconds;
+        let remaining = totalPause;
         countdownIntervalRef.current = setInterval(() => {
           remaining -= 1;
           if (remaining > 0) {
@@ -246,7 +257,7 @@ export const useSimpleAudio = ({
           }
           setState(prev => ({ ...prev, isPaused: false, pauseCountdown: 0 }));
           goToNext();
-        }, pauseSeconds * 1000);
+        }, totalPause * 1000);
       };
       
       const onError = () => {
@@ -348,6 +359,7 @@ export const useSimpleAudio = ({
     currentAyahIndex: state.currentAyahIndex,
     currentAyah: getCurrentAyah(),
     pauseCountdown: state.pauseCountdown,
+    lastAyahDuration: state.lastAyahDuration,
     
     // Actions
     play,

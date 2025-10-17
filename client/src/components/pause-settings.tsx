@@ -7,6 +7,7 @@ interface PauseSettingsProps {
   pauseDuration: number;
   autoRepeat: boolean;
   pauseCountdown: number;
+  lastAyahDuration?: number;
   onPauseDurationChange: (duration: number) => void;
   onAutoRepeatChange: (autoRepeat: boolean) => void;
 }
@@ -15,6 +16,7 @@ export const PauseSettings = ({
   pauseDuration,
   autoRepeat,
   pauseCountdown,
+  lastAyahDuration = 0,
   onPauseDurationChange,
   onAutoRepeatChange,
 }: PauseSettingsProps) => {
@@ -24,9 +26,16 @@ export const PauseSettings = ({
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Pause Settings</h2>
           {pauseCountdown > 0 && (
-            <div className="flex items-center gap-2 bg-islamic-green/10 text-islamic-green px-4 py-2 rounded-full animate-pulse">
-              <span className="text-sm font-medium">Next ayah in</span>
-              <span className="text-2xl font-bold">{pauseCountdown}</span>
+            <div className="flex flex-col items-end gap-1 bg-islamic-green/10 text-islamic-green px-4 py-2 rounded-lg animate-pulse">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Next ayah in</span>
+                <span className="text-2xl font-bold">{pauseCountdown}s</span>
+              </div>
+              {lastAyahDuration > 0 && (
+                <span className="text-xs opacity-75">
+                  ({lastAyahDuration}s ayah + {pauseDuration}s extra)
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -34,24 +43,24 @@ export const PauseSettings = ({
           <div>
             <div className="flex justify-between items-center mb-2">
               <Label className="text-sm font-medium text-gray-700">
-                Silence Duration Between Ayahs
+                Extra Pause Time
               </Label>
               <span className="text-lg font-semibold text-islamic-green">
-                {pauseDuration} seconds
+                {pauseDuration === 0 ? 'Match ayah' : `Match ayah +${pauseDuration}s`}
               </span>
             </div>
             <Slider
               value={[pauseDuration]}
               onValueChange={(values) => onPauseDurationChange(values[0])}
-              min={1}
+              min={0}
               max={30}
               step={1}
               className="w-full"
             />
             <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>1s</span>
-              <span>15s</span>
-              <span>30s</span>
+              <span>+0s</span>
+              <span>+15s</span>
+              <span>+30s</span>
             </div>
           </div>
           <div className="flex items-center space-x-3">
