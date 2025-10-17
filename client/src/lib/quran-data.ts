@@ -6,7 +6,10 @@ export const formatTime = (seconds: number): string => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-export const getSurahDisplayName = (surah: Surah): string => {
+export const getSurahDisplayName = (surah: Surah, language: 'en' | 'ar' = 'en'): string => {
+  if (language === 'ar') {
+    return `${surah.nameArabic} (${surah.nameTranslation})`;
+  }
   return `${surah.name} (${surah.nameTranslation})`;
 };
 

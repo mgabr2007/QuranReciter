@@ -21,7 +21,7 @@ export const SurahSelector = ({
   endAyah,
   onSelectionChange,
 }: SurahSelectorProps) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const queryClient = useQueryClient();
   
   useEffect(() => {
@@ -120,7 +120,7 @@ export const SurahSelector = ({
                 {surahs.length > 0 ? (
                   surahs.map((surah) => (
                     <SelectItem key={surah.id} value={surah.id.toString()}>
-                      {getSurahDisplayName(surah)}
+                      {getSurahDisplayName(surah, language)}
                     </SelectItem>
                   ))
                 ) : (

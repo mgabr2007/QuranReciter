@@ -22,7 +22,7 @@ import { getSurahDisplayName } from "@/lib/quran-data";
 
 export default function Home() {
   const { toast } = useToast();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   
   // State for selections
   const [selectedSurah, setSelectedSurah] = useState(1);
@@ -332,7 +332,7 @@ export default function Home() {
           duration={audioPlayer.duration}
           progress={audioPlayer.progress}
           pauseDuration={pauseDuration}
-          surahName={currentSurah ? getSurahDisplayName(currentSurah) : ""}
+          surahName={currentSurah ? getSurahDisplayName(currentSurah, language) : ""}
           currentAyahNumber={audioPlayer.currentAyah?.number || 1}
           totalAyahs={currentSurah?.totalAyahs || selectedAyahs.length}
           error={audioPlayer.error}
@@ -349,7 +349,7 @@ export default function Home() {
         {/* Ayah Display with Translation */}
         <AyahDisplay
           currentAyah={audioPlayer.currentAyah}
-          surahName={currentSurah ? getSurahDisplayName(currentSurah) : ""}
+          surahName={currentSurah ? getSurahDisplayName(currentSurah, language) : ""}
           currentAyahNumber={audioPlayer.currentAyah?.number || 1}
           totalAyahs={currentSurah?.totalAyahs || selectedAyahs.length}
           isPlaying={audioPlayer.isPlaying}
