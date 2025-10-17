@@ -8,6 +8,7 @@ import {
   BookmarkCheck
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface QuickActionsProps {
   currentSurahId: number;
@@ -25,6 +26,7 @@ export const QuickActions = ({
   onBookmark,
 }: QuickActionsProps) => {
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const handleShare = () => {
     const shareText = `I'm practicing Quran recitation - Surah ${currentSurahId}, Ayah ${currentAyahNumber}`;
@@ -61,7 +63,7 @@ export const QuickActions = ({
   return (
     <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
       <CardContent className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('quickActions')}</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Button
             variant="outline"
@@ -69,7 +71,7 @@ export const QuickActions = ({
             className="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-center flex-col h-auto"
           >
             <RotateCcw className="h-5 w-5 text-gray-600 mb-2" />
-            <span className="text-sm text-gray-700">Reset</span>
+            <span className="text-sm text-gray-700">{t('resetSession')}</span>
           </Button>
           
           <Button
@@ -83,7 +85,7 @@ export const QuickActions = ({
               <Bookmark className="h-5 w-5 text-gray-600 mb-2" />
             )}
             <span className="text-sm text-gray-700">
-              {isBookmarked ? "Bookmarked" : "Bookmark"}
+              {isBookmarked ? t('bookmarkAdded') : t('bookmarkCurrent')}
             </span>
           </Button>
           
@@ -93,7 +95,7 @@ export const QuickActions = ({
             className="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-center flex-col h-auto"
           >
             <Share className="h-5 w-5 text-gray-600 mb-2" />
-            <span className="text-sm text-gray-700">Share</span>
+            <span className="text-sm text-gray-700">{t('share')}</span>
           </Button>
           
           <Button
@@ -102,7 +104,7 @@ export const QuickActions = ({
             className="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-center flex-col h-auto"
           >
             <History className="h-5 w-5 text-gray-600 mb-2" />
-            <span className="text-sm text-gray-700">History</span>
+            <span className="text-sm text-gray-700">{t('history')}</span>
           </Button>
         </div>
       </CardContent>

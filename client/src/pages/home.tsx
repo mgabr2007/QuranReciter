@@ -10,9 +10,11 @@ import { AyahDisplay } from "@/components/ayah-display";
 import { RecitationStatus } from "@/components/recitation-status";
 import { QuickActions } from "@/components/quick-actions";
 import { VerseSearch } from "@/components/verse-search";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { useSimpleAudio } from "@/hooks/use-simple-audio";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Settings, History as HistoryIcon, Heart, Search } from "lucide-react";
 import type { Surah, Ayah, UserPreferences, BookmarkedAyah } from "@shared/schema";
@@ -20,6 +22,7 @@ import { getSurahDisplayName } from "@/lib/quran-data";
 
 export default function Home() {
   const { toast } = useToast();
+  const { t } = useLanguage();
   
   // State for selections
   const [selectedSurah, setSelectedSurah] = useState(1);
@@ -89,8 +92,8 @@ export default function Home() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/bookmarks"] });
       toast({
-        title: "Bookmark Added",
-        description: "Current ayah has been bookmarked",
+        title: t('bookmarkAdded'),
+        description: t('currentAyahBookmarked'),
       });
     },
   });
@@ -168,8 +171,11 @@ export default function Home() {
         });
         
         toast({
-          title: "Session Completed",
-          description: `Completed ${selectedAyahs.length} ayahs in ${Math.floor(sessionTime / 60)}m ${sessionTime % 60}s`,
+          title: t('sessionCompleted'),
+          description: t('completedAyahsTime', { 
+            count: selectedAyahs.length, 
+            time: `${Math.floor(sessionTime / 60)}m ${sessionTime % 60}s` 
+          }),
         });
         
         setCurrentSessionId(null);
@@ -214,8 +220,8 @@ export default function Home() {
     audioPlayer.stop();
     audioPlayer.skipToAyah(0);
     toast({
-      title: "Session Reset",
-      description: "Recitation has been reset to the beginning",
+      title: t('sessionReset'),
+      description: t('recitationReset'),
     });
   };
 
@@ -260,8 +266,8 @@ export default function Home() {
     <>
       <PageHeader
         icon={<span className="text-white text-lg font-arabic">ق</span>}
-        title="Tilawah Assistant"
-        subtitle="Quran Recitation with Pause"
+        title={t('appTitle')}
+        subtitle={t('appSubtitle')}
         actions={
           <>
             <Button 
@@ -272,20 +278,21 @@ export default function Home() {
               data-testid="button-search"
             >
               <Search className="h-4 w-4 mr-2" />
-              Search
+              {t('search')}
             </Button>
             <Link href="/bookmarks">
               <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900" data-testid="link-bookmarks">
                 <Heart className="h-4 w-4 mr-2" />
-                Bookmarks
+                {t('bookmarks')}
               </Button>
             </Link>
             <Link href="/history">
               <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900" data-testid="link-history">
                 <HistoryIcon className="h-4 w-4 mr-2" />
-                History
+                {t('history')}
               </Button>
             </Link>
+            <LanguageSwitcher />
             <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600" data-testid="button-settings">
               <Settings className="h-5 w-5" />
             </Button>

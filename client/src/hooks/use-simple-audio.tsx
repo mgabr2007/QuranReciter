@@ -141,26 +141,46 @@ export const useSimpleAudio = ({
 
   // Use functional setState to read current state instead of closure
   const goToNext = useCallback(() => {
+    // Clear any pending pause countdown to prevent double-advance
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    if (pauseTimeoutRef.current) {
+      clearTimeout(pauseTimeoutRef.current);
+      pauseTimeoutRef.current = null;
+    }
+    
     setState(prev => {
       const nextIndex = prev.currentAyahIndex + 1;
       if (nextIndex < ayahsRef.current.length) {
         onAyahChangeRef.current?.(nextIndex);
-        return { ...prev, currentAyahIndex: nextIndex };
+        return { ...prev, currentAyahIndex: nextIndex, isPaused: false, pauseCountdown: 0 };
       } else if (autoRepeatRef.current) {
         onAyahChangeRef.current?.(0);
-        return { ...prev, currentAyahIndex: 0 };
+        return { ...prev, currentAyahIndex: 0, isPaused: false, pauseCountdown: 0 };
       } else {
         onSessionCompleteRef.current?.();
-        return { ...prev, sessionCompleted: true };
+        return { ...prev, sessionCompleted: true, isPaused: false, pauseCountdown: 0 };
       }
     });
   }, []);
 
   const goToPrevious = useCallback(() => {
+    // Clear any pending pause countdown to prevent double-advance
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    if (pauseTimeoutRef.current) {
+      clearTimeout(pauseTimeoutRef.current);
+      pauseTimeoutRef.current = null;
+    }
+    
     setState(prev => {
       const prevIndex = Math.max(0, prev.currentAyahIndex - 1);
       onAyahChangeRef.current?.(prevIndex);
-      return { ...prev, currentAyahIndex: prevIndex };
+      return { ...prev, currentAyahIndex: prevIndex, isPaused: false, pauseCountdown: 0 };
     });
   }, []);
 
@@ -329,7 +349,17 @@ export const useSimpleAudio = ({
 
   const skipToAyah = useCallback((index: number) => {
     if (index >= 0 && index < ayahsRef.current.length) {
-      setState(prev => ({ ...prev, currentAyahIndex: index }));
+      // Clear any pending pause countdown to prevent double-advance
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+      if (pauseTimeoutRef.current) {
+        clearTimeout(pauseTimeoutRef.current);
+        pauseTimeoutRef.current = null;
+      }
+      
+      setState(prev => ({ ...prev, currentAyahIndex: index, isPaused: false, pauseCountdown: 0 }));
       onAyahChangeRef.current?.(index);
     }
   }, []);

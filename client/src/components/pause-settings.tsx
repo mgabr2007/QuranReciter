@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface PauseSettingsProps {
   pauseDuration: number;
@@ -20,20 +21,22 @@ export const PauseSettings = ({
   onPauseDurationChange,
   onAutoRepeatChange,
 }: PauseSettingsProps) => {
+  const { t } = useLanguage();
+  
   return (
     <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
       <CardContent className="p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Pause Settings</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('pauseSettings')}</h2>
           {pauseCountdown > 0 && (
             <div className="flex flex-col items-end gap-1 bg-islamic-green/10 text-islamic-green px-4 py-2 rounded-lg animate-pulse">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Next ayah in</span>
+                <span className="text-sm font-medium">{t('nextAyahIn')}</span>
                 <span className="text-2xl font-bold">{pauseCountdown}s</span>
               </div>
               {lastAyahDuration > 0 && (
                 <span className="text-xs opacity-75">
-                  ({lastAyahDuration}s ayah + {pauseDuration}s extra)
+                  ({t('ayahDuration', { duration: lastAyahDuration, extra: pauseDuration })})
                 </span>
               )}
             </div>
@@ -43,10 +46,10 @@ export const PauseSettings = ({
           <div>
             <div className="flex justify-between items-center mb-2">
               <Label className="text-sm font-medium text-gray-700">
-                Extra Pause Time
+                {t('extraPauseTime')}
               </Label>
               <span className="text-lg font-semibold text-islamic-green">
-                {pauseDuration === 0 ? 'Match ayah' : `Match ayah +${pauseDuration}s`}
+                {pauseDuration === 0 ? t('matchAyah') : t('matchAyahPlus', { time: pauseDuration })}
               </span>
             </div>
             <Slider
@@ -71,7 +74,7 @@ export const PauseSettings = ({
               className="data-[state=checked]:bg-islamic-green data-[state=checked]:border-islamic-green"
             />
             <Label htmlFor="autoRepeat" className="text-sm text-gray-700">
-              Auto-repeat current ayah
+              {t('autoRepeat')}
             </Label>
           </div>
         </div>

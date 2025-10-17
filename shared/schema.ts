@@ -16,6 +16,7 @@ export const userPreferences = pgTable("user_preferences", {
   autoRepeat: boolean("auto_repeat").notNull().default(false),
   lastSurah: integer("last_surah").default(1),
   lastAyah: integer("last_ayah").default(1),
+  language: varchar("language", { length: 2 }).notNull().default('en'), // 'en' or 'ar'
 });
 
 export const recitationSessions = pgTable("recitation_sessions", {

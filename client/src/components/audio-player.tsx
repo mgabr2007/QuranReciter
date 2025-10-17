@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import type { Ayah } from "@shared/schema";
 import { formatTime } from "@/lib/quran-data";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface AudioPlayerProps {
   currentAyah: Ayah | null;
@@ -60,6 +61,8 @@ export const AudioPlayer = ({
   onRepeat,
   onSeek,
 }: AudioPlayerProps) => {
+  const { t } = useLanguage();
+  
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const percent = (e.clientX - rect.left) / rect.width;
@@ -77,7 +80,7 @@ export const AudioPlayer = ({
               onClick={onPlay}
               className="bg-islamic-green hover:bg-islamic-dark"
             >
-              Try Again
+              {t('tryAgain')}
             </Button>
           </div>
         </CardContent>
@@ -97,12 +100,12 @@ export const AudioPlayer = ({
                   className="font-arabic text-3xl text-islamic-dark leading-loose"
                   dir="rtl"
                 >
-                  {currentAyah?.text || "Please select a surah to begin"}
+                  {currentAyah?.text || t('selectSurahToBegin')}
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-sm text-gray-600 italic">
-                  {currentAyah?.translation || "Translation will appear here"}
+                  {currentAyah?.translation || t('translationWillAppear')}
                 </p>
               </div>
             </div>
@@ -193,7 +196,7 @@ export const AudioPlayer = ({
               className="px-4 py-2 text-sm hover:bg-gray-100 rounded-lg transition-colors flex items-center space-x-2"
             >
               <Repeat className="h-4 w-4" />
-              <span>Repeat</span>
+              <span>{t('repeat')}</span>
             </Button>
             
             <Button
@@ -201,7 +204,7 @@ export const AudioPlayer = ({
               className="px-4 py-2 text-sm hover:bg-gray-100 rounded-lg transition-colors flex items-center space-x-2"
             >
               <PauseCircle className="h-4 w-4" />
-              <span>Pause: {pauseDuration}s</span>
+              <span>{t('pause')}: {pauseDuration}s</span>
             </Button>
           </div>
 
@@ -211,7 +214,7 @@ export const AudioPlayer = ({
               <div className="inline-flex items-center px-4 py-2 bg-islamic-green/10 text-islamic-green rounded-lg">
                 <PauseCircle className="h-4 w-4 mr-2" />
                 <span className="text-sm font-medium">
-                  Pausing between ayahs ({pauseDuration}s)
+                  {t('pause')} ({pauseDuration}s)
                 </span>
               </div>
             </div>

@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { BookOpen, Languages, Volume2 } from "lucide-react";
 import { BookmarkButton } from "@/components/bookmark-button";
 import type { Ayah } from "@shared/schema";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface AyahDisplayProps {
   currentAyah: Ayah | null;
@@ -25,13 +26,14 @@ export const AyahDisplay = ({
   showTranslation = true,
   onTranslationToggle,
 }: AyahDisplayProps) => {
+  const { t } = useLanguage();
 
   if (!currentAyah) {
     return (
       <Card className="w-full">
         <CardContent className="p-6 text-center">
           <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">Select a surah and press play to begin recitation</p>
+          <p className="text-gray-500">{t('selectAndPlay')}</p>
         </CardContent>
       </Card>
     );
@@ -59,7 +61,7 @@ export const AyahDisplay = ({
               <div className="flex items-center gap-2">
                 <Label htmlFor="translation-toggle" className="text-sm">
                   <Languages className="h-4 w-4 inline mr-1" />
-                  Translation
+                  {t('translation')}
                 </Label>
                 <Switch 
                   id="translation-toggle"
@@ -94,7 +96,7 @@ export const AyahDisplay = ({
                   </p>
                 </div>
                 <p className="text-xs text-blue-600 dark:text-blue-400 mt-2 text-right">
-                  — Saheeh International Translation
+                  — {t('saheehTranslation')}
                 </p>
               </div>
             )}
