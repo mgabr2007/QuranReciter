@@ -18,6 +18,7 @@ interface AudioState {
   isLoading: boolean;
   error: string | null;
   sessionCompleted: boolean;
+  pauseCountdown: number;
 }
 
 export const useSimpleAudio = ({
@@ -29,6 +30,7 @@ export const useSimpleAudio = ({
 }: UseSimpleAudioProps) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const shouldAutoPlayRef = useRef(false);
   
   // Refs to store latest callbacks and values to avoid stale closures
@@ -47,6 +49,7 @@ export const useSimpleAudio = ({
     isLoading: false,
     error: null,
     sessionCompleted: false,
+    pauseCountdown: 0,
   });
 
   // Update refs when props change
@@ -120,7 +123,18 @@ export const useSimpleAudio = ({
     
     shouldAutoPlayRef.current = false;
     audioRef.current.pause();
-    setState(prev => ({ ...prev, isPlaying: false }));
+    
+    // Clear countdown if pausing manually
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    if (pauseTimeoutRef.current) {
+      clearTimeout(pauseTimeoutRef.current);
+      pauseTimeoutRef.current = null;
+    }
+    
+    setState(prev => ({ ...prev, isPlaying: false, isPaused: false, pauseCountdown: 0 }));
   }, []);
 
   // Use functional setState to read current state instead of closure
@@ -207,13 +221,32 @@ export const useSimpleAudio = ({
       };
       
       const onEnded = () => {
-        setState(prev => ({ ...prev, isPlaying: false, isPaused: true }));
+        const pauseSeconds = pauseDurationRef.current;
+        setState(prev => ({ ...prev, isPlaying: false, isPaused: true, pauseCountdown: pauseSeconds }));
+        
+        // Start countdown interval
+        let remaining = pauseSeconds;
+        countdownIntervalRef.current = setInterval(() => {
+          remaining -= 1;
+          if (remaining > 0) {
+            setState(prev => ({ ...prev, pauseCountdown: remaining }));
+          } else {
+            if (countdownIntervalRef.current) {
+              clearInterval(countdownIntervalRef.current);
+              countdownIntervalRef.current = null;
+            }
+          }
+        }, 1000);
         
         // Start pause between ayahs
         pauseTimeoutRef.current = setTimeout(() => {
-          setState(prev => ({ ...prev, isPaused: false }));
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+          }
+          setState(prev => ({ ...prev, isPaused: false, pauseCountdown: 0 }));
           goToNext();
-        }, pauseDurationRef.current * 1000);
+        }, pauseSeconds * 1000);
       };
       
       const onError = () => {
@@ -261,11 +294,14 @@ export const useSimpleAudio = ({
     }
   }, [state.currentAyahIndex, ayahs.length, loadCurrentAyah]);
 
-  // Clean up timeouts
+  // Clean up timeouts and intervals
   useEffect(() => {
     return () => {
       if (pauseTimeoutRef.current) {
         clearTimeout(pauseTimeoutRef.current);
+      }
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
       }
     };
   }, []);
@@ -311,6 +347,7 @@ export const useSimpleAudio = ({
     sessionCompleted: state.sessionCompleted,
     currentAyahIndex: state.currentAyahIndex,
     currentAyah: getCurrentAyah(),
+    pauseCountdown: state.pauseCountdown,
     
     // Actions
     play,

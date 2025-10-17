@@ -307,6 +307,7 @@ export default function Home() {
         <PauseSettings
           pauseDuration={pauseDuration}
           autoRepeat={autoRepeat}
+          pauseCountdown={audioPlayer.pauseCountdown}
           onPauseDurationChange={handlePauseDurationChange}
           onAutoRepeatChange={handleAutoRepeatChange}
         />

@@ -6,6 +6,7 @@ import { Slider } from "@/components/ui/slider";
 interface PauseSettingsProps {
   pauseDuration: number;
   autoRepeat: boolean;
+  pauseCountdown: number;
   onPauseDurationChange: (duration: number) => void;
   onAutoRepeatChange: (autoRepeat: boolean) => void;
 }
@@ -13,13 +14,22 @@ interface PauseSettingsProps {
 export const PauseSettings = ({
   pauseDuration,
   autoRepeat,
+  pauseCountdown,
   onPauseDurationChange,
   onAutoRepeatChange,
 }: PauseSettingsProps) => {
   return (
     <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
       <CardContent className="p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Pause Settings</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Pause Settings</h2>
+          {pauseCountdown > 0 && (
+            <div className="flex items-center gap-2 bg-islamic-green/10 text-islamic-green px-4 py-2 rounded-full animate-pulse">
+              <span className="text-sm font-medium">Next ayah in</span>
+              <span className="text-2xl font-bold">{pauseCountdown}</span>
+            </div>
+          )}
+        </div>
         <div className="space-y-4">
           <div>
             <div className="flex justify-between items-center mb-2">
