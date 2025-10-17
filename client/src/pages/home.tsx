@@ -176,6 +176,13 @@ export default function Home() {
     },
   });
 
+  // Reset audio player when surah or ayah range changes
+  useEffect(() => {
+    if (selectedAyahs.length > 0) {
+      audioPlayer.skipToAyah(0);
+    }
+  }, [selectedSurah, startAyah, endAyah]);
+
   const handleSelectionChange = (surah: number, start: number, end: number) => {
     // Stop current playback
     audioPlayer.stop();
