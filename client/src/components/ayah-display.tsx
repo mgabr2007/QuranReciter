@@ -53,24 +53,6 @@ export const AyahDisplay = ({
               Ayah {currentAyahNumber} of {totalAyahs}
             </span>
           </div>
-          
-          <div className="flex items-center gap-3">
-            {currentAyah && <BookmarkButton ayah={currentAyah} />}
-            
-            {onTranslationToggle && (
-              <div className="flex items-center gap-2">
-                <Label htmlFor="translation-toggle" className="text-sm">
-                  <Languages className="h-4 w-4 inline mr-1" />
-                  {t('translation')}
-                </Label>
-                <Switch 
-                  id="translation-toggle"
-                  checked={showTranslation}
-                  onCheckedChange={onTranslationToggle}
-                />
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Arabic text */}
