@@ -178,14 +178,17 @@ export const useSimpleAudio = ({
     
     setState(prev => {
       const nextIndex = prev.currentAyahIndex + 1;
+      console.log('goToNext - Moving to next ayah:', { currentIndex: prev.currentAyahIndex, nextIndex, totalAyahs: ayahsRef.current.length });
       if (nextIndex < ayahsRef.current.length) {
         onAyahChangeRef.current?.(nextIndex);
         return { ...prev, currentAyahIndex: nextIndex, isPaused: false, pauseCountdown: 0 };
       } else if (autoRepeatRef.current) {
+        console.log('goToNext - Auto-repeat enabled, resetting to 0');
         onAyahChangeRef.current?.(0);
         return { ...prev, currentAyahIndex: 0, isPaused: false, pauseCountdown: 0 };
       } else {
         // Session completed - stop auto-play
+        console.log('goToNext - Session completed');
         shouldAutoPlayRef.current = false;
         onSessionCompleteRef.current?.();
         return { ...prev, sessionCompleted: true, isPlaying: false, isPaused: false, pauseCountdown: 0 };
@@ -306,14 +309,17 @@ export const useSimpleAudio = ({
           // Advance to next ayah using setState with functional update
           setState(prev => {
             const nextIndex = prev.currentAyahIndex + 1;
+            console.log('onEnded auto-advance - Moving to next ayah:', { currentIndex: prev.currentAyahIndex, nextIndex, totalAyahs: ayahsRef.current.length });
             if (nextIndex < ayahsRef.current.length) {
               onAyahChangeRef.current?.(nextIndex);
               return { ...prev, currentAyahIndex: nextIndex, isPaused: false, pauseCountdown: 0 };
             } else if (autoRepeatRef.current) {
+              console.log('onEnded auto-advance - Auto-repeat enabled, resetting to 0');
               onAyahChangeRef.current?.(0);
               return { ...prev, currentAyahIndex: 0, isPaused: false, pauseCountdown: 0 };
             } else {
               // Session completed - stop auto-play
+              console.log('onEnded auto-advance - Session completed');
               shouldAutoPlayRef.current = false;
               onSessionCompleteRef.current?.();
               return { ...prev, sessionCompleted: true, isPlaying: false, isPaused: false, pauseCountdown: 0 };
@@ -412,7 +418,8 @@ export const useSimpleAudio = ({
   // Calculate stats directly for reactivity
   const completedAyahs = state.currentAyahIndex;
   const remainingAyahs = Math.max(0, ayahsRef.current.length - state.currentAyahIndex - 1);
-  const sessionTime = startTimeRef.current === 0 ? 0 : Math.floor((Date.now() - startTimeRef.current) / 1000);
+  // Use sessionTimeUpdate state to trigger re-renders, but calculate from startTimeRef for accuracy
+  const sessionTime = startTimeRef.current === 0 ? 0 : Math.floor((state.sessionTimeUpdate - startTimeRef.current) / 1000) || Math.floor((Date.now() - startTimeRef.current) / 1000);
 
   return {
     // State
