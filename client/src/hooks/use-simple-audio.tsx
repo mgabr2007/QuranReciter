@@ -160,8 +160,10 @@ export const useSimpleAudio = ({
         onAyahChangeRef.current?.(0);
         return { ...prev, currentAyahIndex: 0, isPaused: false, pauseCountdown: 0 };
       } else {
+        // Session completed - stop auto-play
+        shouldAutoPlayRef.current = false;
         onSessionCompleteRef.current?.();
-        return { ...prev, sessionCompleted: true, isPaused: false, pauseCountdown: 0 };
+        return { ...prev, sessionCompleted: true, isPlaying: false, isPaused: false, pauseCountdown: 0 };
       }
     });
   }, []);
@@ -286,8 +288,10 @@ export const useSimpleAudio = ({
               onAyahChangeRef.current?.(0);
               return { ...prev, currentAyahIndex: 0, isPaused: false, pauseCountdown: 0 };
             } else {
+              // Session completed - stop auto-play
+              shouldAutoPlayRef.current = false;
               onSessionCompleteRef.current?.();
-              return { ...prev, sessionCompleted: true, isPaused: false, pauseCountdown: 0 };
+              return { ...prev, sessionCompleted: true, isPlaying: false, isPaused: false, pauseCountdown: 0 };
             }
           });
         }, totalPause * 1000);
