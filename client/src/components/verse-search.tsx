@@ -1,13 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, X, Play, BookmarkPlus } from "lucide-react";
+import { Search, X, Play } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { BookmarkButton } from "./bookmark-button";
 import type { Ayah, Surah } from "@shared/schema";
 
 interface VerseSearchProps {
@@ -202,10 +201,6 @@ export const VerseSearch = ({ onPlayVerse, onClose }: VerseSearchProps) => {
                         >
                           <Play className="h-4 w-4" />
                         </Button>
-                        <BookmarkButton
-                          ayah={result.ayah}
-                          onBookmarkChange={() => {}}
-                        />
                       </div>
                     </div>
                     

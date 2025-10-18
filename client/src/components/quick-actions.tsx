@@ -1,11 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  RotateCcw, 
-  Bookmark, 
-  Share, 
-  BookmarkCheck
-} from "lucide-react";
+import { RotateCcw, Share } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/i18n/LanguageContext";
 
@@ -13,18 +8,14 @@ interface QuickActionsProps {
   currentSurahId: number;
   currentSurahName: string;
   currentAyahNumber: number;
-  isBookmarked: boolean;
   onReset: () => void;
-  onBookmark: () => void;
 }
 
 export const QuickActions = ({
   currentSurahId,
   currentSurahName,
   currentAyahNumber,
-  isBookmarked,
   onReset,
-  onBookmark,
 }: QuickActionsProps) => {
   const { toast } = useToast();
   const { t } = useLanguage();

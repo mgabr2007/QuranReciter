@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { BookOpen, Languages, Volume2 } from "lucide-react";
-import { BookmarkButton } from "@/components/bookmark-button";
 import type { Ayah } from "@shared/schema";
 import { useLanguage } from "@/i18n/LanguageContext";
 

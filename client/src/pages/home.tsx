@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Link } from "wouter";
 import { PageLayout } from "@/components/page-layout";
 import { PageHeader } from "@/components/page-header";
 import { SurahSelector } from "@/components/surah-selector";
@@ -15,8 +14,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { Settings, History as HistoryIcon, Heart, Search } from "lucide-react";
-import type { Surah, Ayah, UserPreferences, BookmarkedAyah } from "@shared/schema";
+import { Settings, History as HistoryIcon, Search } from "lucide-react";
+import type { Surah, Ayah, UserPreferences } from "@shared/schema";
 import { getSurahDisplayName } from "@/lib/quran-data";
 
 export default function Home() {
@@ -53,11 +52,6 @@ export default function Home() {
     enabled: !!selectedSurah,
   });
 
-  // Load bookmarks
-  const { data: bookmarks = [] } = useQuery<BookmarkedAyah[]>({
-    queryKey: ["/api/bookmarks"],
-  });
-
   // Get ayahs in selected range - memoized to prevent recreation on every render
   const selectedAyahs = useMemo(() => {
     return allAyahs.filter(
@@ -81,19 +75,6 @@ export default function Home() {
       apiRequest("PUT", "/api/preferences", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/preferences"] });
-    },
-  });
-
-  // Create bookmark mutation
-  const createBookmarkMutation = useMutation({
-    mutationFn: (data: { surahId: number; ayahNumber: number; notes?: string }) =>
-      apiRequest("POST", "/api/bookmarks", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/bookmarks"] });
-      toast({
-        title: t('bookmarkAdded'),
-        description: t('currentAyahBookmarked'),
-      });
     },
   });
 
@@ -224,16 +205,6 @@ export default function Home() {
     });
   };
 
-  const handleBookmark = () => {
-    const currentAyah = audioPlayer.currentAyah;
-    if (currentAyah) {
-      createBookmarkMutation.mutate({
-        surahId: currentAyah.surahId,
-        ayahNumber: currentAyah.number,
-      });
-    }
-  };
-
   const handlePlayVerseFromSearch = (surahId: number, ayahNumber: number) => {
     // Stop current playback
     audioPlayer.stop();
@@ -248,17 +219,6 @@ export default function Home() {
       lastSurah: surahId,
       lastAyah: ayahNumber,
     });
-  };
-
-  const isCurrentAyahBookmarked = () => {
-    const currentAyah = audioPlayer.currentAyah;
-    if (!currentAyah) return false;
-    
-    return bookmarks.some(
-      bookmark => 
-        bookmark.surahId === currentAyah.surahId && 
-        bookmark.ayahNumber === currentAyah.number
-    );
   };
 
   return (
@@ -279,12 +239,6 @@ export default function Home() {
               <Search className="h-4 w-4 mr-2" />
               {t('search')}
             </Button>
-            <Link href="/bookmarks">
-              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900" data-testid="link-bookmarks">
-                <Heart className="h-4 w-4 mr-2" />
-                {t('bookmarks')}
-              </Button>
-            </Link>
             
             <LanguageSwitcher />
             <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600" data-testid="button-settings">
@@ -356,9 +310,7 @@ export default function Home() {
           currentSurahId={selectedSurah}
           currentSurahName={currentSurah ? getSurahDisplayName(currentSurah, language) : ""}
           currentAyahNumber={audioPlayer.currentAyah?.number || 1}
-          isBookmarked={isCurrentAyahBookmarked()}
           onReset={handleReset}
-          onBookmark={handleBookmark}
         />
         </div>
       </PageLayout>
