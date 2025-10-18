@@ -359,9 +359,9 @@ export default function Home() {
 
         {/* Recitation Status */}
         <RecitationStatus
-          completedAyahs={audioPlayer.getCompletedAyahs()}
-          remainingAyahs={audioPlayer.getRemainingAyahs()}
-          sessionTime={audioPlayer.getSessionTime()}
+          completedAyahs={audioPlayer.completedAyahs}
+          remainingAyahs={audioPlayer.remainingAyahs}
+          sessionTime={audioPlayer.sessionTime}
         />
 
         {/* Quick Actions */}

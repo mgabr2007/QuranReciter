@@ -409,18 +409,10 @@ export const useSimpleAudio = ({
     }
   }, []);
 
-  const getCompletedAyahs = useCallback(() => {
-    return state.currentAyahIndex;
-  }, [state.currentAyahIndex]);
-
-  const getRemainingAyahs = useCallback(() => {
-    return ayahsRef.current.length - state.currentAyahIndex - 1;
-  }, [state.currentAyahIndex]);
-
-  const getSessionTime = useCallback(() => {
-    if (startTimeRef.current === 0) return 0;
-    return Math.floor((Date.now() - startTimeRef.current) / 1000);
-  }, []);
+  // Calculate stats directly for reactivity
+  const completedAyahs = state.currentAyahIndex;
+  const remainingAyahs = Math.max(0, ayahsRef.current.length - state.currentAyahIndex - 1);
+  const sessionTime = startTimeRef.current === 0 ? 0 : Math.floor((Date.now() - startTimeRef.current) / 1000);
 
   return {
     // State
@@ -436,6 +428,9 @@ export const useSimpleAudio = ({
     currentAyah: getCurrentAyah(),
     pauseCountdown: state.pauseCountdown,
     lastAyahDuration: state.lastAyahDuration,
+    completedAyahs,
+    remainingAyahs,
+    sessionTime,
     
     // Actions
     play,
@@ -448,8 +443,5 @@ export const useSimpleAudio = ({
     forward,
     repeat,
     skipToAyah,
-    getCompletedAyahs,
-    getRemainingAyahs,
-    getSessionTime,
   };
 };
