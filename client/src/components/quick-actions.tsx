@@ -12,6 +12,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 
 interface QuickActionsProps {
   currentSurahId: number;
+  currentSurahName: string;
   currentAyahNumber: number;
   isBookmarked: boolean;
   onReset: () => void;
@@ -20,6 +21,7 @@ interface QuickActionsProps {
 
 export const QuickActions = ({
   currentSurahId,
+  currentSurahName,
   currentAyahNumber,
   isBookmarked,
   onReset,
@@ -29,26 +31,27 @@ export const QuickActions = ({
   const { t } = useLanguage();
 
   const handleShare = () => {
-    const shareText = `I'm practicing Quran recitation - Surah ${currentSurahId}, Ayah ${currentAyahNumber}`;
+    const shareText = t('shareText', { surah: currentSurahName, ayah: currentAyahNumber.toString() });
+    const shareTitle = t('shareTitle');
     
     if (navigator.share) {
       navigator.share({
-        title: 'Quran Recitation Progress',
+        title: shareTitle,
         text: shareText,
         url: window.location.href,
       }).catch(() => {
         // Fallback to clipboard
         navigator.clipboard.writeText(shareText);
         toast({
-          title: "Copied to clipboard",
-          description: "Progress shared to clipboard",
+          title: t('copiedToClipboard'),
+          description: t('progressShared'),
         });
       });
     } else {
       navigator.clipboard.writeText(shareText);
       toast({
-        title: "Copied to clipboard", 
-        description: "Progress shared to clipboard",
+        title: t('copiedToClipboard'), 
+        description: t('progressShared'),
       });
     }
   };

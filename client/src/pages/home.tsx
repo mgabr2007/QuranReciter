@@ -367,6 +367,7 @@ export default function Home() {
         {/* Quick Actions */}
         <QuickActions
           currentSurahId={selectedSurah}
+          currentSurahName={currentSurah ? getSurahDisplayName(currentSurah, language) : ""}
           currentAyahNumber={audioPlayer.currentAyah?.number || 1}
           isBookmarked={isCurrentAyahBookmarked()}
           onReset={handleReset}
