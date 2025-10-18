@@ -20,6 +20,7 @@ interface AudioState {
   sessionCompleted: boolean;
   pauseCountdown: number;
   lastAyahDuration: number;
+  sessionTimeUpdate: number;
 }
 
 export const useSimpleAudio = ({
@@ -34,6 +35,8 @@ export const useSimpleAudio = ({
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const shouldAutoPlayRef = useRef(false);
   const lastLoadedUrlRef = useRef<string>('');
+  const startTimeRef = useRef<number>(0);
+  const sessionUpdateIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Refs to store latest callbacks and values to avoid stale closures
   const onAyahChangeRef = useRef(onAyahChange);
@@ -53,6 +56,7 @@ export const useSimpleAudio = ({
     sessionCompleted: false,
     pauseCountdown: 0,
     lastAyahDuration: 0,
+    sessionTimeUpdate: 0,
   });
 
   // Update refs when props change
@@ -114,6 +118,18 @@ export const useSimpleAudio = ({
         error: 'No audio loaded' 
       }));
       return;
+    }
+    
+    // Start session timer if not already started
+    if (startTimeRef.current === 0) {
+      startTimeRef.current = Date.now();
+    }
+    
+    // Start session time update interval
+    if (!sessionUpdateIntervalRef.current) {
+      sessionUpdateIntervalRef.current = setInterval(() => {
+        setState(prev => ({ ...prev, sessionTimeUpdate: Date.now() }));
+      }, 1000);
     }
     
     console.log('Starting playback, src:', audioRef.current.src);
@@ -360,6 +376,9 @@ export const useSimpleAudio = ({
       if (countdownIntervalRef.current) {
         clearInterval(countdownIntervalRef.current);
       }
+      if (sessionUpdateIntervalRef.current) {
+        clearInterval(sessionUpdateIntervalRef.current);
+      }
     };
   }, []);
 
@@ -399,8 +418,9 @@ export const useSimpleAudio = ({
   }, [state.currentAyahIndex]);
 
   const getSessionTime = useCallback(() => {
-    return Math.floor(state.currentTime);
-  }, [state.currentTime]);
+    if (startTimeRef.current === 0) return 0;
+    return Math.floor((Date.now() - startTimeRef.current) / 1000);
+  }, []);
 
   return {
     // State
