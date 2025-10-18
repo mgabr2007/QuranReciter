@@ -33,6 +33,7 @@ export const useSimpleAudio = ({
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const shouldAutoPlayRef = useRef(false);
+  const lastLoadedUrlRef = useRef<string>('');
   
   // Refs to store latest callbacks and values to avoid stale closures
   const onAyahChangeRef = useRef(onAyahChange);
@@ -84,7 +85,15 @@ export const useSimpleAudio = ({
     }
 
     const audioUrl = getAudioUrl(ayah.surahId, ayah.number);
+    
+    // Only load if the URL has actually changed
+    if (audioUrl === lastLoadedUrlRef.current) {
+      console.log(`Skipping reload - same URL: ${audioUrl}`);
+      return;
+    }
+    
     console.log(`Loading ayah ${ayah.number} from ${audioUrl}`, { surahId: ayah.surahId, ayahNumber: ayah.number });
+    lastLoadedUrlRef.current = audioUrl;
     
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
