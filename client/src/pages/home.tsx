@@ -286,12 +286,7 @@ export default function Home() {
                 {t('bookmarks')}
               </Button>
             </Link>
-            <Link href="/history">
-              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900" data-testid="link-history">
-                <HistoryIcon className="h-4 w-4 mr-2" />
-                {t('history')}
-              </Button>
-            </Link>
+            
             <LanguageSwitcher />
             <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600" data-testid="button-settings">
               <Settings className="h-5 w-5" />
