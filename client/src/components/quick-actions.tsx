@@ -4,7 +4,6 @@ import {
   RotateCcw, 
   Bookmark, 
   Share, 
-  History,
   BookmarkCheck
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -56,13 +55,6 @@ export const QuickActions = ({
     }
   };
 
-  const handleViewHistory = () => {
-    toast({
-      title: "Coming Soon",
-      description: "Session history feature will be available soon",
-    });
-  };
-
   return (
     <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
       <CardContent className="p-6">
@@ -99,15 +91,6 @@ export const QuickActions = ({
           >
             <Share className="h-5 w-5 text-gray-600 mb-2" />
             <span className="text-sm text-gray-700">{t('share')}</span>
-          </Button>
-          
-          <Button
-            variant="outline"
-            onClick={handleViewHistory}
-            className="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-center flex-col h-auto"
-          >
-            <History className="h-5 w-5 text-gray-600 mb-2" />
-            <span className="text-sm text-gray-700">{t('history')}</span>
           </Button>
         </div>
       </CardContent>
