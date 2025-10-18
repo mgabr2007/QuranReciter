@@ -71,21 +71,6 @@ export const QuickActions = ({
           
           <Button
             variant="outline"
-            onClick={onBookmark}
-            className="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-center flex-col h-auto"
-          >
-            {isBookmarked ? (
-              <BookmarkCheck className="h-5 w-5 text-islamic-green mb-2" />
-            ) : (
-              <Bookmark className="h-5 w-5 text-gray-600 mb-2" />
-            )}
-            <span className="text-sm text-gray-700">
-              {isBookmarked ? t('bookmarkAdded') : t('bookmarkCurrent')}
-            </span>
-          </Button>
-          
-          <Button
-            variant="outline"
             onClick={handleShare}
             className="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-center flex-col h-auto"
           >
