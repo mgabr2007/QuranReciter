@@ -7,7 +7,6 @@ import { SurahSelector } from "@/components/surah-selector";
 import { PauseSettings } from "@/components/pause-settings";
 import { AudioPlayer } from "@/components/audio-player";
 import { AyahDisplay } from "@/components/ayah-display";
-import { RecitationStatus } from "@/components/recitation-status";
 import { QuickActions } from "@/components/quick-actions";
 import { VerseSearch } from "@/components/verse-search";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -350,13 +349,6 @@ export default function Home() {
           isPlaying={audioPlayer.isPlaying}
           showTranslation={showTranslation}
           onTranslationToggle={setShowTranslation}
-        />
-
-        {/* Recitation Status */}
-        <RecitationStatus
-          completedAyahs={audioPlayer.completedAyahs}
-          remainingAyahs={audioPlayer.remainingAyahs}
-          sessionTime={audioPlayer.sessionTime}
         />
 
         {/* Quick Actions */}
