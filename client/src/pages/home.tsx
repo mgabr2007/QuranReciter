@@ -14,7 +14,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { Settings, History as HistoryIcon, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import type { Surah, Ayah, UserPreferences } from "@shared/schema";
 import { getSurahDisplayName } from "@/lib/quran-data";
 
@@ -241,9 +241,6 @@ export default function Home() {
             </Button>
             
             <LanguageSwitcher />
-            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600" data-testid="button-settings">
-              <Settings className="h-5 w-5" />
-            </Button>
           </>
         }
       />
