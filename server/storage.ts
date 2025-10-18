@@ -21,8 +21,6 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
-import fs from "fs";
-import path from "path";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -63,20 +61,6 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  private quranData: any;
-
-  constructor() {
-    // Load Quran data
-    try {
-      const dataPath = path.resolve(import.meta.dirname, "data", "surahs.json");
-      const data = fs.readFileSync(dataPath, "utf-8");
-      this.quranData = JSON.parse(data);
-    } catch (error) {
-      console.error("Failed to load Quran data:", error);
-      this.quranData = { surahs: [], ayahs: {} };
-    }
-  }
-
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
