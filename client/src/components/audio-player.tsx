@@ -166,22 +166,15 @@ export const AudioPlayer = ({
           </div>
 
           {/* Additional Controls */}
-          <div className="flex justify-center space-x-4">
+          <div className="flex justify-center">
             <Button
               variant="outline"
               onClick={onRepeat}
               className="px-4 py-2 text-sm hover:bg-gray-100 rounded-lg transition-colors flex items-center space-x-2"
+              data-testid="button-repeat"
             >
               <Repeat className="h-4 w-4" />
               <span>{t('repeat')}</span>
-            </Button>
-            
-            <Button
-              variant="outline"
-              className="px-4 py-2 text-sm hover:bg-gray-100 rounded-lg transition-colors flex items-center space-x-2"
-            >
-              <PauseCircle className="h-4 w-4" />
-              <span>{t('pause')}: {pauseDuration}s</span>
             </Button>
           </div>
 
