@@ -62,6 +62,9 @@ export const useSimpleAudio = ({
     sessionTimeUpdate: 0,
   });
 
+  // Trigger to force reload of the same ayah (for auto-repeat ayah feature)
+  const [reloadTrigger, setReloadTrigger] = useState(0);
+
   // Update refs when props change
   useEffect(() => {
     onAyahChangeRef.current = onAyahChange;
@@ -94,12 +97,6 @@ export const useSimpleAudio = ({
 
     const audioUrl = getAudioUrl(ayah.surahId, ayah.number);
     
-    // Only load if the URL has actually changed
-    if (audioUrl === lastLoadedUrlRef.current) {
-      console.log(`Skipping reload - same URL: ${audioUrl}`);
-      return;
-    }
-    
     console.log(`Loading ayah ${ayah.number} from ${audioUrl}`, { surahId: ayah.surahId, ayahNumber: ayah.number });
     lastLoadedUrlRef.current = audioUrl;
     
@@ -107,7 +104,7 @@ export const useSimpleAudio = ({
     
     audioRef.current.src = audioUrl;
     audioRef.current.load();
-  }, [state.currentAyahIndex]);
+  }, [state.currentAyahIndex, reloadTrigger]);
 
   const play = useCallback(() => {
     if (!audioRef.current) {
@@ -315,7 +312,8 @@ export const useSimpleAudio = ({
             // If auto-repeat ayah is enabled, repeat the current ayah
             if (autoRepeatAyahRef.current) {
               console.log('onEnded auto-advance - Auto-repeat ayah enabled, repeating current ayah:', prev.currentAyahIndex);
-              onAyahChangeRef.current?.(prev.currentAyahIndex);
+              // Trigger a reload of the same ayah
+              setReloadTrigger(t => t + 1);
               return { ...prev, isPaused: false, pauseCountdown: 0 };
             }
             
