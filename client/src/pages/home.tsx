@@ -265,7 +265,16 @@ export default function Home() {
           onAutoRepeatChange={handleAutoRepeatChange}
         />
 
-
+        {/* Ayah Display with Translation */}
+        <AyahDisplay
+          currentAyah={audioPlayer.currentAyah}
+          surahName={currentSurah ? getSurahDisplayName(currentSurah, language) : ""}
+          currentAyahNumber={audioPlayer.currentAyah?.number || 1}
+          totalAyahs={currentSurah?.totalAyahs || selectedAyahs.length}
+          isPlaying={audioPlayer.isPlaying}
+          showTranslation={showTranslation}
+          onTranslationToggle={setShowTranslation}
+        />
 
         {/* Audio Player */}
         <AudioPlayer
@@ -289,17 +298,6 @@ export default function Home() {
           onForward={audioPlayer.forward}
           onRepeat={audioPlayer.repeat}
           onSeek={audioPlayer.seek}
-        />
-
-        {/* Ayah Display with Translation */}
-        <AyahDisplay
-          currentAyah={audioPlayer.currentAyah}
-          surahName={currentSurah ? getSurahDisplayName(currentSurah, language) : ""}
-          currentAyahNumber={audioPlayer.currentAyah?.number || 1}
-          totalAyahs={currentSurah?.totalAyahs || selectedAyahs.length}
-          isPlaying={audioPlayer.isPlaying}
-          showTranslation={showTranslation}
-          onTranslationToggle={setShowTranslation}
         />
 
         {/* Quick Actions */}
