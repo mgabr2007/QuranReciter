@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import type { Surah } from "@shared/schema";
-import { getSurahDisplayName, getAyahRange } from "@/lib/quran-data";
+import { getSurahDisplayName } from "@/lib/quran-data";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 interface SurahSelectorProps {
@@ -59,24 +58,8 @@ export const SurahSelector = ({
     const id = parseInt(surahId);
     const surah = surahs.find(s => s.id === id);
     if (surah) {
-      const range = getAyahRange(surah.totalAyahs, 1, surah.totalAyahs);
-      onSelectionChange(id, range.start, range.end);
-    }
-  };
-
-  const handleStartAyahChange = (value: string) => {
-    const start = parseInt(value) || 1;
-    if (currentSurah) {
-      const range = getAyahRange(currentSurah.totalAyahs, start, endAyah);
-      onSelectionChange(selectedSurah, range.start, range.end);
-    }
-  };
-
-  const handleEndAyahChange = (value: string) => {
-    const end = parseInt(value) || 1;
-    if (currentSurah) {
-      const range = getAyahRange(currentSurah.totalAyahs, startAyah, end);
-      onSelectionChange(selectedSurah, range.start, range.end);
+      // Always load the full surah range
+      onSelectionChange(id, 1, surah.totalAyahs);
     }
   };
 
@@ -107,58 +90,31 @@ export const SurahSelector = ({
     <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
       <CardContent className="p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('selectSurah')}</h2>
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <Label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('surah')}
-            </Label>
-            <Select value={selectedSurah.toString()} onValueChange={handleSurahChange}>
-              <SelectTrigger className="w-full focus:ring-2 focus:ring-islamic-green focus:border-transparent">
-                <SelectValue placeholder={surahs.length > 0 ? t('selectASurah') : t('loadingSurahs')} />
-              </SelectTrigger>
-              <SelectContent>
-                {surahs.length > 0 ? (
-                  surahs.map((surah) => (
-                    <SelectItem key={surah.id} value={surah.id.toString()}>
-                      {getSurahDisplayName(surah, language)}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="loading" disabled>{t('loadingSurahs')}</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('ayahRange')}
-            </Label>
-            <div className="flex space-x-2">
-              <Input
-                type="number"
-                placeholder={t('from')}
-                min="1"
-                max={currentSurah?.totalAyahs || 1}
-                value={startAyah}
-                onChange={(e) => handleStartAyahChange(e.target.value)}
-                className="flex-1 focus:ring-2 focus:ring-islamic-green focus:border-transparent"
-              />
-              <Input
-                type="number"
-                placeholder={t('to')}
-                min="1"
-                max={currentSurah?.totalAyahs || 1}
-                value={endAyah}
-                onChange={(e) => handleEndAyahChange(e.target.value)}
-                className="flex-1 focus:ring-2 focus:ring-islamic-green focus:border-transparent"
-              />
-            </div>
-            {currentSurah && (
-              <p className="text-xs text-gray-500 mt-1">
-                {t('totalAyahsIn', { surah: currentSurah.name, count: currentSurah.totalAyahs })}
-              </p>
-            )}
-          </div>
+        <div className="space-y-2">
+          <Label className="block text-sm font-medium text-gray-700">
+            {t('surah')}
+          </Label>
+          <Select value={selectedSurah.toString()} onValueChange={handleSurahChange}>
+            <SelectTrigger className="w-full focus:ring-2 focus:ring-islamic-green focus:border-transparent" data-testid="select-surah">
+              <SelectValue placeholder={surahs.length > 0 ? t('selectASurah') : t('loadingSurahs')} />
+            </SelectTrigger>
+            <SelectContent>
+              {surahs.length > 0 ? (
+                surahs.map((surah) => (
+                  <SelectItem key={surah.id} value={surah.id.toString()}>
+                    {getSurahDisplayName(surah, language)}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="loading" disabled>{t('loadingSurahs')}</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+          {currentSurah && (
+            <p className="text-sm text-gray-600">
+              {t('totalAyahsIn', { surah: currentSurah.name, count: currentSurah.totalAyahs })}
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>

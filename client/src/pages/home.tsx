@@ -120,11 +120,16 @@ export default function Home() {
       if (preferences.lastSurah) {
         setSelectedSurah(preferences.lastSurah);
       }
-      if (preferences.lastAyah) {
-        setStartAyah(preferences.lastAyah);
-      }
     }
   }, [preferences]);
+
+  // Always load the full surah range when surah changes
+  useEffect(() => {
+    if (currentSurah) {
+      setStartAyah(1);
+      setEndAyah(currentSurah.totalAyahs);
+    }
+  }, [currentSurah]);
 
   // Audio player hook
   const audioPlayer = useSimpleAudio({
