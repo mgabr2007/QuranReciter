@@ -68,7 +68,7 @@ export const translations = {
     completedAyahsTime: "Completed {{count}} ayahs in {{time}}",
     share: "Share",
     shareTitle: "Quran Recitation Progress",
-    shareText: "I'm practicing Quran recitation - {{surah}}, Ayah {{ayah}}",
+    shareText: "I'm practicing Quran recitation - {{surah}}, Ayah {{ayah}}. You can do the same join me: {{url}}",
     copiedToClipboard: "Copied to clipboard",
     progressShared: "Progress shared to clipboard",
     
@@ -209,7 +209,7 @@ export const translations = {
     completedAyahsTime: "تم إكمال {{count}} آيات في {{time}}",
     share: "مشاركة",
     shareTitle: "تقدم تلاوة القرآن",
-    shareText: "أتدرب على تلاوة القرآن - {{surah}}، الآية {{ayah}}",
+    shareText: "أتدرب على تلاوة القرآن - {{surah}}، الآية {{ayah}}. يمكنك أن تفعل الشيء نفسه انضم إلي: {{url}}",
     copiedToClipboard: "تم النسخ إلى الحافظة",
     progressShared: "تمت مشاركة التقدم إلى الحافظة",
     

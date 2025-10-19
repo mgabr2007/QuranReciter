@@ -21,14 +21,18 @@ export const QuickActions = ({
   const { t } = useLanguage();
 
   const handleShare = () => {
-    const shareText = t('shareText', { surah: currentSurahName, ayah: currentAyahNumber.toString() });
+    const appUrl = window.location.origin;
+    const shareText = t('shareText', { 
+      surah: currentSurahName, 
+      ayah: currentAyahNumber.toString(),
+      url: appUrl
+    });
     const shareTitle = t('shareTitle');
     
     if (navigator.share) {
       navigator.share({
         title: shareTitle,
         text: shareText,
-        url: window.location.href,
       }).catch(() => {
         // Fallback to clipboard
         navigator.clipboard.writeText(shareText);
