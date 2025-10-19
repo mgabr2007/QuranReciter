@@ -8,9 +8,9 @@ export const formatTime = (seconds: number): string => {
 
 export const getSurahDisplayName = (surah: Surah, language: 'en' | 'ar' = 'en'): string => {
   if (language === 'ar') {
-    return `${surah.nameArabic} (${surah.nameTranslation})`;
+    return `${surah.id}. ${surah.nameArabic}`;
   }
-  return `${surah.name} (${surah.nameTranslation})`;
+  return `${surah.id}. ${surah.name}`;
 };
 
 export const getAyahRange = (totalAyahs: number, startAyah?: number, endAyah?: number): { start: number; end: number } => {
