@@ -28,6 +28,7 @@ export default function Home() {
   const [endAyah, setEndAyah] = useState(7);
   const [pauseDuration, setPauseDuration] = useState(5);
   const [autoRepeat, setAutoRepeat] = useState(false);
+  const [autoRepeatAyah, setAutoRepeatAyah] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [showTranslation, setShowTranslation] = useState(true);
@@ -115,6 +116,7 @@ export default function Home() {
     if (preferences) {
       setPauseDuration(preferences.pauseDuration);
       setAutoRepeat(preferences.autoRepeat);
+      setAutoRepeatAyah(preferences.autoRepeatAyah || false);
       if (preferences.lastSurah) {
         setSelectedSurah(preferences.lastSurah);
       }
@@ -129,6 +131,7 @@ export default function Home() {
     ayahs: selectedAyahs,
     pauseDuration,
     autoRepeat,
+    autoRepeatAyah,
     onAyahChange: (ayahIndex) => {
       const ayah = selectedAyahs[ayahIndex];
       if (ayah) {
@@ -196,6 +199,11 @@ export default function Home() {
     updatePreferencesMutation.mutate({ autoRepeat: repeat });
   };
 
+  const handleAutoRepeatAyahChange = (repeat: boolean) => {
+    setAutoRepeatAyah(repeat);
+    updatePreferencesMutation.mutate({ autoRepeatAyah: repeat });
+  };
+
   const handleReset = () => {
     audioPlayer.stop();
     audioPlayer.skipToAyah(0);
@@ -259,10 +267,12 @@ export default function Home() {
         <PauseSettings
           pauseDuration={pauseDuration}
           autoRepeat={autoRepeat}
+          autoRepeatAyah={autoRepeatAyah}
           pauseCountdown={audioPlayer.pauseCountdown}
           lastAyahDuration={audioPlayer.lastAyahDuration}
           onPauseDurationChange={handlePauseDurationChange}
           onAutoRepeatChange={handleAutoRepeatChange}
+          onAutoRepeatAyahChange={handleAutoRepeatAyahChange}
         />
 
         {/* Ayah Display with Translation */}

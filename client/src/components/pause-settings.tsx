@@ -7,19 +7,23 @@ import { useLanguage } from "@/i18n/LanguageContext";
 interface PauseSettingsProps {
   pauseDuration: number;
   autoRepeat: boolean;
+  autoRepeatAyah: boolean;
   pauseCountdown: number;
   lastAyahDuration?: number;
   onPauseDurationChange: (duration: number) => void;
   onAutoRepeatChange: (autoRepeat: boolean) => void;
+  onAutoRepeatAyahChange: (autoRepeatAyah: boolean) => void;
 }
 
 export const PauseSettings = ({
   pauseDuration,
   autoRepeat,
+  autoRepeatAyah,
   pauseCountdown,
   lastAyahDuration = 0,
   onPauseDurationChange,
   onAutoRepeatChange,
+  onAutoRepeatAyahChange,
 }: PauseSettingsProps) => {
   const { t } = useLanguage();
   
@@ -68,10 +72,23 @@ export const PauseSettings = ({
           </div>
           <div className="flex items-center space-x-3">
             <Checkbox
+              id="autoRepeatAyah"
+              checked={autoRepeatAyah}
+              onCheckedChange={(checked) => onAutoRepeatAyahChange(checked as boolean)}
+              className="data-[state=checked]:bg-islamic-green data-[state=checked]:border-islamic-green"
+              data-testid="checkbox-auto-repeat-ayah"
+            />
+            <Label htmlFor="autoRepeatAyah" className="text-sm text-gray-700">
+              {t('autoRepeatAyah')}
+            </Label>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Checkbox
               id="autoRepeat"
               checked={autoRepeat}
               onCheckedChange={(checked) => onAutoRepeatChange(checked as boolean)}
               className="data-[state=checked]:bg-islamic-green data-[state=checked]:border-islamic-green"
+              data-testid="checkbox-auto-repeat-surah"
             />
             <Label htmlFor="autoRepeat" className="text-sm text-gray-700">
               {t('autoRepeat')}

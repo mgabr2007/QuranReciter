@@ -5,6 +5,7 @@ interface UseSimpleAudioProps {
   ayahs: Ayah[];
   pauseDuration: number;
   autoRepeat: boolean;
+  autoRepeatAyah: boolean;
   onAyahChange?: (ayahIndex: number) => void;
   onSessionComplete?: () => void;
 }
@@ -27,6 +28,7 @@ export const useSimpleAudio = ({
   ayahs,
   pauseDuration,
   autoRepeat,
+  autoRepeatAyah,
   onAyahChange,
   onSessionComplete,
 }: UseSimpleAudioProps) => {
@@ -43,6 +45,7 @@ export const useSimpleAudio = ({
   const onSessionCompleteRef = useRef(onSessionComplete);
   const ayahsRef = useRef(ayahs);
   const autoRepeatRef = useRef(autoRepeat);
+  const autoRepeatAyahRef = useRef(autoRepeatAyah);
   const pauseDurationRef = useRef(pauseDuration);
   
   const [state, setState] = useState<AudioState>({
@@ -65,8 +68,9 @@ export const useSimpleAudio = ({
     onSessionCompleteRef.current = onSessionComplete;
     ayahsRef.current = ayahs;
     autoRepeatRef.current = autoRepeat;
+    autoRepeatAyahRef.current = autoRepeatAyah;
     pauseDurationRef.current = pauseDuration;
-  }, [onAyahChange, onSessionComplete, ayahs, autoRepeat, pauseDuration]);
+  }, [onAyahChange, onSessionComplete, ayahs, autoRepeat, autoRepeatAyah, pauseDuration]);
 
   const formatNumber = (num: number, padding: number): string => {
     return num.toString().padStart(padding, '0');
@@ -308,13 +312,20 @@ export const useSimpleAudio = ({
           
           // Advance to next ayah using setState with functional update
           setState(prev => {
+            // If auto-repeat ayah is enabled, repeat the current ayah
+            if (autoRepeatAyahRef.current) {
+              console.log('onEnded auto-advance - Auto-repeat ayah enabled, repeating current ayah:', prev.currentAyahIndex);
+              onAyahChangeRef.current?.(prev.currentAyahIndex);
+              return { ...prev, isPaused: false, pauseCountdown: 0 };
+            }
+            
             const nextIndex = prev.currentAyahIndex + 1;
             console.log('onEnded auto-advance - Moving to next ayah:', { currentIndex: prev.currentAyahIndex, nextIndex, totalAyahs: ayahsRef.current.length });
             if (nextIndex < ayahsRef.current.length) {
               onAyahChangeRef.current?.(nextIndex);
               return { ...prev, currentAyahIndex: nextIndex, isPaused: false, pauseCountdown: 0 };
             } else if (autoRepeatRef.current) {
-              console.log('onEnded auto-advance - Auto-repeat enabled, resetting to 0');
+              console.log('onEnded auto-advance - Auto-repeat surah enabled, resetting to 0');
               onAyahChangeRef.current?.(0);
               return { ...prev, currentAyahIndex: 0, isPaused: false, pauseCountdown: 0 };
             } else {
