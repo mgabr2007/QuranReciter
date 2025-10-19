@@ -27,7 +27,7 @@ export const translations = {
     extraPauseTime: "Extra Pause Time",
     matchAyah: "Match ayah",
     matchAyahPlus: "Match ayah +{{time}}s",
-    autoRepeat: "Auto-repeat current ayah",
+    autoRepeat: "Auto-repeat surah",
     nextAyahIn: "Next ayah in",
     ayahDuration: "{{duration}}s ayah + {{extra}}s extra",
     
@@ -168,7 +168,7 @@ export const translations = {
     extraPauseTime: "وقت وقفة إضافي",
     matchAyah: "تطابق الآية",
     matchAyahPlus: "تطابق الآية +{{time}}ث",
-    autoRepeat: "إعادة الآية الحالية تلقائياً",
+    autoRepeat: "إعادة السورة تلقائياً",
     nextAyahIn: "الآية التالية في",
     ayahDuration: "{{duration}}ث آية + {{extra}}ث إضافي",
     
