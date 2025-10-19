@@ -342,12 +342,22 @@ export const useSimpleAudio = ({
         setState(prev => ({ ...prev, isLoading: false }));
       };
       
+      const onPlay = () => {
+        setState(prev => ({ ...prev, isPlaying: true, error: null }));
+      };
+      
+      const onPause = () => {
+        setState(prev => ({ ...prev, isPlaying: false }));
+      };
+      
       audio.addEventListener('loadstart', onLoadStart);
       audio.addEventListener('loadeddata', onLoadedData);
       audio.addEventListener('timeupdate', onTimeUpdate);
       audio.addEventListener('ended', onEnded);
       audio.addEventListener('error', onError);
       audio.addEventListener('canplaythrough', onCanPlayThrough);
+      audio.addEventListener('play', onPlay);
+      audio.addEventListener('pause', onPause);
       
       return () => {
         audio.removeEventListener('loadstart', onLoadStart);
@@ -356,6 +366,8 @@ export const useSimpleAudio = ({
         audio.removeEventListener('ended', onEnded);
         audio.removeEventListener('error', onError);
         audio.removeEventListener('canplaythrough', onCanPlayThrough);
+        audio.removeEventListener('play', onPlay);
+        audio.removeEventListener('pause', onPause);
       };
     }
   }, []); // Empty dependency array - event listeners only created once

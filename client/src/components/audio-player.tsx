@@ -134,6 +134,7 @@ export const AudioPlayer = ({
               onClick={isPlaying ? onPause : onPlay}
               disabled={isLoading}
               className="w-16 h-16 bg-islamic-green hover:bg-islamic-dark rounded-full shadow-lg"
+              data-testid={isPlaying ? "button-pause" : "button-play"}
             >
               {isLoading ? (
                 <Loader2 className="h-6 w-6 animate-spin text-white" />
