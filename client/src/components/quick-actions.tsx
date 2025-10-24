@@ -1,8 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RotateCcw, Share } from "lucide-react";
+import { RotateCcw, Share, Flame } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { Link } from "wouter";
 
 interface QuickActionsProps {
   currentSurahId: number;
@@ -59,15 +60,28 @@ export const QuickActions = ({
             variant="outline"
             onClick={onReset}
             className="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-center flex-col h-auto"
+            data-testid="button-reset-session"
           >
             <RotateCcw className="h-5 w-5 text-gray-600 mb-2" />
             <span className="text-sm text-gray-700">{t('resetSession')}</span>
           </Button>
           
+          <Link href="/memorization">
+            <Button
+              variant="outline"
+              className="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-center flex-col h-auto"
+              data-testid="button-memorization"
+            >
+              <Flame className="h-5 w-5 text-gray-600 mb-2" />
+              <span className="text-sm text-gray-700">{t('memorization')}</span>
+            </Button>
+          </Link>
+          
           <Button
             variant="outline"
             onClick={handleShare}
             className="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-center flex-col h-auto"
+            data-testid="button-share"
           >
             <Share className="h-5 w-5 text-gray-600 mb-2" />
             <span className="text-sm text-gray-700">{t('share')}</span>

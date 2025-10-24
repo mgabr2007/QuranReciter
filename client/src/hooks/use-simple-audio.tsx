@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Ayah } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
 
 interface UseSimpleAudioProps {
   ayahs: Ayah[];
@@ -280,6 +281,18 @@ export const useSimpleAudio = ({
       const onEnded = () => {
         const ayahDuration = Math.ceil(audio.duration); // Duration of ayah that just finished (rounded up)
         const extraPause = pauseDurationRef.current; // Extra pause time configured by user
+        
+        // Log practice for the ayah that just finished
+        const currentAyah = ayahsRef.current[state.currentAyahIndex];
+        if (currentAyah) {
+          apiRequest('POST', '/api/practice/log', {
+            surahId: currentAyah.surahId,
+            ayahNumber: currentAyah.number,
+            duration: ayahDuration
+          }).catch(error => {
+            console.error('Failed to log practice:', error);
+          });
+        }
         
         // If pauseDuration is 0 (no pause mode), skip pause entirely and advance immediately
         if (extraPause === 0) {

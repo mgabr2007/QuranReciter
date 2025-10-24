@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/i18n/LanguageContext";
 import Home from "@/pages/home";
 import History from "@/pages/history";
 import Bookmarks from "@/pages/bookmarks";
+import Memorization from "@/pages/memorization";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -15,6 +16,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/history" component={History} />
       <Route path="/bookmarks" component={Bookmarks} />
+      <Route path="/memorization" component={Memorization} />
       <Route component={NotFound} />
     </Switch>
   );
