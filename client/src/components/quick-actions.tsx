@@ -52,39 +52,39 @@ export const QuickActions = ({
   };
 
   return (
-    <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
+    <Card className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
       <CardContent className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('quickActions')}</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{t('quickActions')}</h3>
         <div className="flex justify-center gap-3">
           <Button
             variant="outline"
             onClick={onReset}
-            className="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-center flex-col h-auto"
+            className="p-3 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors text-center flex-col h-auto"
             data-testid="button-reset-session"
           >
-            <RotateCcw className="h-5 w-5 text-gray-600 mb-2" />
-            <span className="text-sm text-gray-700">{t('resetSession')}</span>
+            <RotateCcw className="h-5 w-5 text-gray-600 dark:text-gray-300 mb-2" />
+            <span className="text-sm text-gray-700 dark:text-gray-300">{t('resetSession')}</span>
           </Button>
           
           <Link href="/memorization">
             <Button
-              variant="outline"
-              className="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-center flex-col h-auto"
+              className="p-4 bg-gradient-to-br from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-lg transition-all text-center flex-col h-auto shadow-md hover:shadow-lg transform hover:scale-105"
               data-testid="button-memorization"
             >
-              <Flame className="h-5 w-5 text-gray-600 mb-2" />
-              <span className="text-sm text-gray-700">{t('memorization')}</span>
+              <Flame className="h-6 w-6 text-white mb-2" />
+              <span className="text-sm font-semibold text-white">{t('memorization')}</span>
+              <span className="text-xs text-orange-100 mt-1">{t('viewHeatmap')}</span>
             </Button>
           </Link>
           
           <Button
             variant="outline"
             onClick={handleShare}
-            className="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-center flex-col h-auto"
+            className="p-3 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors text-center flex-col h-auto"
             data-testid="button-share"
           >
-            <Share className="h-5 w-5 text-gray-600 mb-2" />
-            <span className="text-sm text-gray-700">{t('share')}</span>
+            <Share className="h-5 w-5 text-gray-600 dark:text-gray-300 mb-2" />
+            <span className="text-sm text-gray-700 dark:text-gray-300">{t('share')}</span>
           </Button>
         </div>
       </CardContent>

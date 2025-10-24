@@ -73,6 +73,7 @@ export const translations = {
     shareText: "I'm practicing Quran recitation - {{surah}}, Ayah {{ayah}}. You can do the same join me: {{url}}",
     copiedToClipboard: "Copied to clipboard",
     progressShared: "Progress shared to clipboard",
+    viewHeatmap: "View Heatmap",
     
     // Bookmarks Page
     myBookmarks: "My Bookmarks",
@@ -244,6 +245,7 @@ export const translations = {
     shareText: "أتدرب على تلاوة القرآن - {{surah}}، الآية {{ayah}}. يمكنك أن تفعل الشيء نفسه انضم إلي: {{url}}",
     copiedToClipboard: "تم النسخ إلى الحافظة",
     progressShared: "تمت مشاركة التقدم إلى الحافظة",
+    viewHeatmap: "عرض الخريطة",
     
     // Bookmarks Page
     myBookmarks: "مفضلاتي",
