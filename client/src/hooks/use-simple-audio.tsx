@@ -8,6 +8,7 @@ interface UseSimpleAudioProps {
   autoRepeatAyah: boolean;
   onAyahChange?: (ayahIndex: number) => void;
   onSessionComplete?: () => void;
+  onSurahComplete?: () => void;
 }
 
 interface AudioState {
@@ -31,6 +32,7 @@ export const useSimpleAudio = ({
   autoRepeatAyah,
   onAyahChange,
   onSessionComplete,
+  onSurahComplete,
 }: UseSimpleAudioProps) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -43,6 +45,7 @@ export const useSimpleAudio = ({
   // Refs to store latest callbacks and values to avoid stale closures
   const onAyahChangeRef = useRef(onAyahChange);
   const onSessionCompleteRef = useRef(onSessionComplete);
+  const onSurahCompleteRef = useRef(onSurahComplete);
   const ayahsRef = useRef(ayahs);
   const autoRepeatRef = useRef(autoRepeat);
   const autoRepeatAyahRef = useRef(autoRepeatAyah);
@@ -69,11 +72,12 @@ export const useSimpleAudio = ({
   useEffect(() => {
     onAyahChangeRef.current = onAyahChange;
     onSessionCompleteRef.current = onSessionComplete;
+    onSurahCompleteRef.current = onSurahComplete;
     ayahsRef.current = ayahs;
     autoRepeatRef.current = autoRepeat;
     autoRepeatAyahRef.current = autoRepeatAyah;
     pauseDurationRef.current = pauseDuration;
-  }, [onAyahChange, onSessionComplete, ayahs, autoRepeat, autoRepeatAyah, pauseDuration]);
+  }, [onAyahChange, onSessionComplete, onSurahComplete, ayahs, autoRepeat, autoRepeatAyah, pauseDuration]);
 
   const formatNumber = (num: number, padding: number): string => {
     return num.toString().padStart(padding, '0');
@@ -298,11 +302,10 @@ export const useSimpleAudio = ({
               onAyahChangeRef.current?.(0);
               return { ...prev, currentAyahIndex: 0, isPaused: false, pauseCountdown: 0 };
             } else {
-              // Session completed - stop auto-play
-              console.log('onEnded (no pause) - Session completed');
-              shouldAutoPlayRef.current = false;
-              onSessionCompleteRef.current?.();
-              return { ...prev, sessionCompleted: true, isPlaying: false, isPaused: false, pauseCountdown: 0 };
+              // Surah completed - advance to next surah
+              console.log('onEnded (no pause) - Surah completed, advancing to next surah');
+              onSurahCompleteRef.current?.();
+              return { ...prev, isPaused: false, pauseCountdown: 0 };
             }
           });
           return; // Exit early for no-pause mode
@@ -360,11 +363,10 @@ export const useSimpleAudio = ({
               onAyahChangeRef.current?.(0);
               return { ...prev, currentAyahIndex: 0, isPaused: false, pauseCountdown: 0 };
             } else {
-              // Session completed - stop auto-play
-              console.log('onEnded auto-advance - Session completed');
-              shouldAutoPlayRef.current = false;
-              onSessionCompleteRef.current?.();
-              return { ...prev, sessionCompleted: true, isPlaying: false, isPaused: false, pauseCountdown: 0 };
+              // Surah completed - advance to next surah
+              console.log('onEnded auto-advance - Surah completed, advancing to next surah');
+              onSurahCompleteRef.current?.();
+              return { ...prev, isPaused: false, pauseCountdown: 0 };
             }
           });
         }, totalPause * 1000);

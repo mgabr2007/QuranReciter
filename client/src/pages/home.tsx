@@ -149,8 +149,44 @@ export default function Home() {
         });
       }
     },
+    onSurahComplete: () => {
+      // When current surah ends, automatically advance to next surah
+      if (selectedSurah < 114) {
+        const nextSurah = selectedSurah + 1;
+        console.log('Surah completed, advancing to next surah:', nextSurah);
+        setSelectedSurah(nextSurah);
+        
+        // Update preferences
+        updatePreferencesMutation.mutate({
+          lastSurah: nextSurah,
+          lastAyah: 1,
+        });
+      } else {
+        // Reached the end of the Quran
+        console.log('Completed entire Quran!');
+        
+        // Complete the session
+        if (currentSessionId && sessionStartTime) {
+          const sessionTime = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
+          updateSessionMutation.mutate({
+            sessionId: currentSessionId,
+            completedAyahs: selectedAyahs.length,
+            sessionTime,
+            isCompleted: true,
+          });
+        }
+        
+        toast({
+          title: t('sessionCompleted'),
+          description: 'Completed the entire Quran! Masha\'Allah!',
+        });
+        
+        setCurrentSessionId(null);
+        setSessionStartTime(null);
+      }
+    },
     onSessionComplete: () => {
-      // Complete the session
+      // This is now only used when user manually stops or session ends without surah completion
       if (currentSessionId && sessionStartTime) {
         const sessionTime = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
         updateSessionMutation.mutate({
