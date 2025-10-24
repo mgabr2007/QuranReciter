@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PageLayout } from "@/components/page-layout";
 import { PageHeader } from "@/components/page-header";
+import { BackButton } from "@/components/back-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Flame, BarChart3, Trophy } from "lucide-react";
+import { Calendar, BookOpen, BarChart3, Trophy, Grid3x3 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Surah } from "@shared/schema";
@@ -109,7 +110,8 @@ export default function MemorizationPage() {
   return (
     <PageLayout>
       <PageHeader
-        icon={<Flame className="h-6 w-6 text-white" />}
+        leftContent={<BackButton label={t('backToHome')} />}
+        icon={<BookOpen className="h-6 w-6 text-white" />}
         title={t('memorization')}
         subtitle={t('memorization_subtitle')}
       />
@@ -117,7 +119,7 @@ export default function MemorizationPage() {
       <Tabs defaultValue="heatmap" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="heatmap" data-testid="tab-heatmap">
-            <Flame className="w-4 h-4 mr-2" />
+            <Grid3x3 className="w-4 h-4 mr-2" />
             {t('heatmap')}
           </TabsTrigger>
           <TabsTrigger value="calendar" data-testid="tab-calendar">
