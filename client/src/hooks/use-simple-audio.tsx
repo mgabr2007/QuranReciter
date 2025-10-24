@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Ayah } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface UseSimpleAudioProps {
   ayahs: Ayah[];
@@ -289,6 +289,12 @@ export const useSimpleAudio = ({
             surahId: currentAyah.surahId,
             ayahNumber: currentAyah.number,
             duration: ayahDuration
+          }).then(() => {
+            // Invalidate practice queries so memorization page updates
+            queryClient.invalidateQueries({ queryKey: ['/api/practice/heatmap'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/practice/calendar'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/practice/surah'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/practice/top'] });
           }).catch(error => {
             console.error('Failed to log practice:', error);
           });
