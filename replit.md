@@ -54,6 +54,14 @@ The application follows a modern full-stack architecture with:
 - Time tracking and completion metrics
 - User preferences persistence
 
+### Memorization Tracking System
+- Ayah-level practice heatmap with color-coded visualization
+- Calendar view showing daily practice activity
+- Surah-by-surah progress breakdown with completion percentages
+- Top practiced ayahs analytics with detailed statistics
+- Automatic practice logging integrated with audio playback
+- Visual indicators showing repetition counts and last practice dates
+
 ## Data Flow
 
 ### Audio Playback Flow
@@ -184,10 +192,30 @@ The application follows a modern full-stack architecture with:
 - Reduced visual clutter for better concentration during recitation
 - Maintained essential features while removing redundant navigation elements
 
+### October 24, 2025 - Comprehensive Memorization Analytics Dashboard
+✅ **Practice Tracking System**
+- Implemented ayah_practice_log database table for granular listening history
+- Created backend API endpoints for logging practice and retrieving analytics
+- Automatic practice logging fires on each ayah completion during playback
+
+✅ **Analytics Visualization**
+- **Ayah Heatmap**: Color-coded grid showing practice intensity per ayah (0 to 11+ repetitions)
+- **Practice Calendar**: Monthly calendar view with daily practice counts and color indicators
+- **Surah Progress**: Per-surah breakdown with completion percentages and ayah-level tracking
+- **Top Ayahs**: Rankings of most practiced verses with repetition counts and statistics
+
+✅ **Technical Implementation**
+- TanStack Query integration with proper URL parameter encoding
+- Loading and error states for all analytics tabs
+- Multilingual support for English/Arabic UI
+- Responsive grid layouts with hover effects and tooltips
+- Navigation button added to Quick Actions component
+
 ## Changelog
 
 ```
 Changelog:
+- October 24, 2025: Comprehensive memorization analytics dashboard (heatmap, calendar, progress tracking)
 - October 18, 2025: UI Simplification & Focus Enhancement (centered buttons, multilingual share)
 - October 18, 2025: Complete audio coverage (6,180 files) and deployment readiness
 - October 17, 2025: UI component refactoring to eliminate duplication
