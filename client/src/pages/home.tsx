@@ -154,6 +154,11 @@ export default function Home() {
       if (selectedSurah < 114) {
         const nextSurah = selectedSurah + 1;
         console.log('Surah completed, advancing to next surah:', nextSurah);
+        
+        // Stop playback temporarily to prevent race conditions
+        audioPlayer.pause();
+        
+        // Change to next surah (this will trigger effects to load new ayahs)
         setSelectedSurah(nextSurah);
         
         // Update preferences
@@ -161,6 +166,13 @@ export default function Home() {
           lastSurah: nextSurah,
           lastAyah: 1,
         });
+        
+        // Reset to first ayah and resume playback after a short delay
+        // This ensures the new surah's ayahs are loaded first
+        setTimeout(() => {
+          audioPlayer.skipToAyah(0);
+          audioPlayer.play();
+        }, 100);
       } else {
         // Reached the end of the Quran
         console.log('Completed entire Quran!');
