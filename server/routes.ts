@@ -233,6 +233,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Practice tracking routes for memorization heatmap
+  app.post("/api/practice/log", async (req, res) => {
+    try {
+      const userId = 1; // Demo user ID
+      const { surahId, ayahNumber, duration } = req.body;
+      
+      await storage.logAyahPractice(userId, surahId, ayahNumber, duration || 0);
+      res.json({ message: "Practice logged successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to log practice" });
+    }
+  });
+
+  app.get("/api/practice/heatmap", async (req, res) => {
+    try {
+      const userId = 1; // Demo user ID
+      const heatmapData = await storage.getAyahHeatmapData(userId);
+      res.json(heatmapData);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch heatmap data" });
+    }
+  });
+
+  app.get("/api/practice/surah/:surahId", async (req, res) => {
+    try {
+      const userId = 1; // Demo user ID
+      const surahId = parseInt(req.params.surahId);
+      const progress = await storage.getSurahProgress(userId, surahId);
+      res.json(progress);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch surah progress" });
+    }
+  });
+
+  app.get("/api/practice/calendar/:year/:month", async (req, res) => {
+    try {
+      const userId = 1; // Demo user ID
+      const year = parseInt(req.params.year);
+      const month = parseInt(req.params.month);
+      const calendarData = await storage.getCalendarData(userId, year, month);
+      res.json(calendarData);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch calendar data" });
+    }
+  });
+
+  app.get("/api/practice/top/:limit", async (req, res) => {
+    try {
+      const userId = 1; // Demo user ID
+      const limit = parseInt(req.params.limit);
+      const topAyahs = await storage.getMostPracticedAyahs(userId, limit);
+      res.json(topAyahs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch most practiced ayahs" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
