@@ -27,6 +27,7 @@ export default function Home() {
   const [startAyah, setStartAyah] = useState(1);
   const [endAyah, setEndAyah] = useState(7);
   const [pauseDuration, setPauseDuration] = useState(5);
+  const [noPause, setNoPause] = useState(false);
   const [autoRepeat, setAutoRepeat] = useState(false);
   const [autoRepeatAyah, setAutoRepeatAyah] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
@@ -115,6 +116,7 @@ export default function Home() {
   useEffect(() => {
     if (preferences) {
       setPauseDuration(preferences.pauseDuration);
+      setNoPause(preferences.noPause || false);
       setAutoRepeat(preferences.autoRepeat);
       setAutoRepeatAyah(preferences.autoRepeatAyah || false);
       if (preferences.lastSurah) {
@@ -131,10 +133,10 @@ export default function Home() {
     }
   }, [currentSurah]);
 
-  // Audio player hook
+  // Audio player hook - use 0 pause when noPause is true
   const audioPlayer = useSimpleAudio({
     ayahs: selectedAyahs,
-    pauseDuration,
+    pauseDuration: noPause ? 0 : pauseDuration,
     autoRepeat,
     autoRepeatAyah,
     onAyahChange: (ayahIndex) => {
@@ -197,6 +199,11 @@ export default function Home() {
   const handlePauseDurationChange = (duration: number) => {
     setPauseDuration(duration);
     updatePreferencesMutation.mutate({ pauseDuration: duration });
+  };
+
+  const handleNoPauseChange = (enabled: boolean) => {
+    setNoPause(enabled);
+    updatePreferencesMutation.mutate({ noPause: enabled });
   };
 
   const handleAutoRepeatChange = (repeat: boolean) => {
@@ -271,11 +278,13 @@ export default function Home() {
         {/* Pause Settings */}
         <PauseSettings
           pauseDuration={pauseDuration}
+          noPause={noPause}
           autoRepeat={autoRepeat}
           autoRepeatAyah={autoRepeatAyah}
           pauseCountdown={audioPlayer.pauseCountdown}
           lastAyahDuration={audioPlayer.lastAyahDuration}
           onPauseDurationChange={handlePauseDurationChange}
+          onNoPauseChange={handleNoPauseChange}
           onAutoRepeatChange={handleAutoRepeatChange}
           onAutoRepeatAyahChange={handleAutoRepeatAyahChange}
         />

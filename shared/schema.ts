@@ -13,6 +13,7 @@ export const userPreferences = pgTable("user_preferences", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
   pauseDuration: integer("pause_duration").notNull().default(5),
+  noPause: boolean("no_pause").notNull().default(false),
   autoRepeat: boolean("auto_repeat").notNull().default(false),
   autoRepeatAyah: boolean("auto_repeat_ayah").notNull().default(false),
   lastSurah: integer("last_surah").default(1),

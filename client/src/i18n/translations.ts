@@ -24,6 +24,7 @@ export const translations = {
     
     // Pause Settings
     pauseSettings: "Pause Settings",
+    noPause: "No pause (continuous play)",
     extraPauseTime: "Extra Pause Time",
     matchAyah: "Match ayah",
     matchAyahPlus: "Match ayah +{{time}}s",
@@ -166,6 +167,7 @@ export const translations = {
     
     // Pause Settings
     pauseSettings: "إعدادات الوقفة",
+    noPause: "بدون وقفة (تشغيل متواصل)",
     extraPauseTime: "وقت وقفة إضافي",
     matchAyah: "تطابق الآية",
     matchAyahPlus: "تطابق الآية +{{time}}ث",

@@ -6,22 +6,26 @@ import { useLanguage } from "@/i18n/LanguageContext";
 
 interface PauseSettingsProps {
   pauseDuration: number;
+  noPause: boolean;
   autoRepeat: boolean;
   autoRepeatAyah: boolean;
   pauseCountdown: number;
   lastAyahDuration?: number;
   onPauseDurationChange: (duration: number) => void;
+  onNoPauseChange: (noPause: boolean) => void;
   onAutoRepeatChange: (autoRepeat: boolean) => void;
   onAutoRepeatAyahChange: (autoRepeatAyah: boolean) => void;
 }
 
 export const PauseSettings = ({
   pauseDuration,
+  noPause,
   autoRepeat,
   autoRepeatAyah,
   pauseCountdown,
   lastAyahDuration = 0,
   onPauseDurationChange,
+  onNoPauseChange,
   onAutoRepeatChange,
   onAutoRepeatAyahChange,
 }: PauseSettingsProps) => {
@@ -47,29 +51,43 @@ export const PauseSettings = ({
           )}
         </div>
         <div className="space-y-4">
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <Label className="text-sm font-medium text-gray-700">
-                {t('extraPauseTime')}
-              </Label>
-              <span className="text-lg font-semibold text-islamic-green">
-                {pauseDuration === 0 ? t('matchAyah') : t('matchAyahPlus', { time: pauseDuration })}
-              </span>
-            </div>
-            <Slider
-              value={[pauseDuration]}
-              onValueChange={(values) => onPauseDurationChange(values[0])}
-              min={0}
-              max={30}
-              step={1}
-              className="w-full"
+          <div className="flex items-center space-x-3">
+            <Checkbox
+              id="noPause"
+              checked={noPause}
+              onCheckedChange={(checked) => onNoPauseChange(checked as boolean)}
+              className="data-[state=checked]:bg-islamic-green data-[state=checked]:border-islamic-green"
+              data-testid="checkbox-no-pause"
             />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>+0s</span>
-              <span>+15s</span>
-              <span>+30s</span>
-            </div>
+            <Label htmlFor="noPause" className="text-sm font-medium text-gray-700">
+              {t('noPause')}
+            </Label>
           </div>
+          {!noPause && (
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <Label className="text-sm font-medium text-gray-700">
+                  {t('extraPauseTime')}
+                </Label>
+                <span className="text-lg font-semibold text-islamic-green">
+                  {pauseDuration === 0 ? t('matchAyah') : t('matchAyahPlus', { time: pauseDuration })}
+                </span>
+              </div>
+              <Slider
+                value={[pauseDuration]}
+                onValueChange={(values) => onPauseDurationChange(values[0])}
+                min={0}
+                max={30}
+                step={1}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>+0s</span>
+                <span>+15s</span>
+                <span>+30s</span>
+              </div>
+            </div>
+          )}
           <div className="flex items-center space-x-3">
             <Checkbox
               id="autoRepeatAyah"

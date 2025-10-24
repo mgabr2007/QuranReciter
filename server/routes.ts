@@ -65,7 +65,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         preferences = await storage.createUserPreferences({
           userId,
           pauseDuration: 5,
+          noPause: false,
           autoRepeat: false,
+          autoRepeatAyah: false,
           lastSurah: 1,
           lastAyah: 1,
         });
