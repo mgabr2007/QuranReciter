@@ -67,7 +67,20 @@ export const AyahDisplay = ({
               </p>
             </div>
             
-            
+            {/* English translation */}
+            {showTranslation && currentAyah.translation && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-100 dark:border-blue-800">
+                <div className="flex items-start gap-2 mb-2">
+                  <Languages className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-1 flex-shrink-0" />
+                  <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                    {t('translation')}
+                  </p>
+                </div>
+                <p className="text-base md:text-lg leading-relaxed text-gray-700 dark:text-gray-300 text-left">
+                  {currentAyah.translation}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
