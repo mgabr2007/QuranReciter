@@ -276,7 +276,40 @@ export const useSimpleAudio = ({
       const onEnded = () => {
         const ayahDuration = Math.ceil(audio.duration); // Duration of ayah that just finished (rounded up)
         const extraPause = pauseDurationRef.current; // Extra pause time configured by user
-        const totalPause = ayahDuration + extraPause; // Total pause = ayah duration + extra
+        
+        // If pauseDuration is 0 (no pause mode), skip pause entirely and advance immediately
+        if (extraPause === 0) {
+          setState(prev => {
+            // If auto-repeat ayah is enabled, repeat the current ayah
+            if (autoRepeatAyahRef.current) {
+              console.log('onEnded (no pause) - Auto-repeat ayah enabled, repeating current ayah:', prev.currentAyahIndex);
+              // Trigger a reload of the same ayah
+              setReloadTrigger(t => t + 1);
+              return { ...prev, isPaused: false, pauseCountdown: 0 };
+            }
+            
+            const nextIndex = prev.currentAyahIndex + 1;
+            console.log('onEnded (no pause) - Moving to next ayah immediately:', { currentIndex: prev.currentAyahIndex, nextIndex, totalAyahs: ayahsRef.current.length });
+            if (nextIndex < ayahsRef.current.length) {
+              onAyahChangeRef.current?.(nextIndex);
+              return { ...prev, currentAyahIndex: nextIndex, isPaused: false, pauseCountdown: 0 };
+            } else if (autoRepeatRef.current) {
+              console.log('onEnded (no pause) - Auto-repeat surah enabled, resetting to 0');
+              onAyahChangeRef.current?.(0);
+              return { ...prev, currentAyahIndex: 0, isPaused: false, pauseCountdown: 0 };
+            } else {
+              // Session completed - stop auto-play
+              console.log('onEnded (no pause) - Session completed');
+              shouldAutoPlayRef.current = false;
+              onSessionCompleteRef.current?.();
+              return { ...prev, sessionCompleted: true, isPlaying: false, isPaused: false, pauseCountdown: 0 };
+            }
+          });
+          return; // Exit early for no-pause mode
+        }
+        
+        // Normal pause mode: total pause = ayah duration + extra pause
+        const totalPause = ayahDuration + extraPause;
         
         setState(prev => ({ 
           ...prev, 
