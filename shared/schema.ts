@@ -63,6 +63,22 @@ export const cachedAudioFiles = pgTable("cached_audio_files", {
   createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
 });
 
+// Ayah practice/listening log for memorization tracking
+export const ayahPracticeLog = pgTable("ayah_practice_log", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  surahId: integer("surah_id").notNull().references(() => surahs.id),
+  ayahNumber: integer("ayah_number").notNull(),
+  practiceDate: text("practice_date").notNull(), // YYYY-MM-DD format
+  listenCount: integer("listen_count").notNull().default(1),
+  totalDuration: integer("total_duration").notNull().default(0), // Total time spent in seconds
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  userSurahAyahIdx: index("user_surah_ayah_idx").on(table.userId, table.surahId, table.ayahNumber),
+  userDateIdx: index("user_date_idx").on(table.userId, table.practiceDate),
+}));
+
 // Database table for storing all Quran surahs
 export const surahs = pgTable("surahs", {
   id: integer("id").primaryKey(),
@@ -138,6 +154,12 @@ export const insertAyahSchema = createInsertSchema(ayahs).omit({
   updatedAt: true,
 });
 
+export const insertAyahPracticeLogSchema = createInsertSchema(ayahPracticeLog).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type UserPreferences = typeof userPreferences.$inferSelect;
@@ -152,12 +174,15 @@ export type Surah = typeof surahs.$inferSelect;
 export type InsertSurah = z.infer<typeof insertSurahSchema>;
 export type Ayah = typeof ayahs.$inferSelect;
 export type InsertAyah = z.infer<typeof insertAyahSchema>;
+export type AyahPracticeLog = typeof ayahPracticeLog.$inferSelect;
+export type InsertAyahPracticeLog = z.infer<typeof insertAyahPracticeLogSchema>;
 
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   preferences: many(userPreferences),
   sessions: many(recitationSessions),
   bookmarks: many(bookmarkedAyahs),
+  practiceLogs: many(ayahPracticeLog),
 }));
 
 export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
@@ -192,6 +217,17 @@ export const surahsRelations = relations(surahs, ({ many }) => ({
 export const ayahsRelations = relations(ayahs, ({ one }) => ({
   surah: one(surahs, {
     fields: [ayahs.surahId],
+    references: [surahs.id],
+  }),
+}));
+
+export const ayahPracticeLogRelations = relations(ayahPracticeLog, ({ one }) => ({
+  user: one(users, {
+    fields: [ayahPracticeLog.userId],
+    references: [users.id],
+  }),
+  surah: one(surahs, {
+    fields: [ayahPracticeLog.surahId],
     references: [surahs.id],
   }),
 }));

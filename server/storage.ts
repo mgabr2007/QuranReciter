@@ -6,6 +6,7 @@ import {
   cachedAudioFiles,
   surahs,
   ayahs,
+  ayahPracticeLog,
   type User, 
   type InsertUser,
   type UserPreferences,
@@ -17,7 +18,9 @@ import {
   type CachedAudioFile,
   type InsertCachedAudioFile,
   type Surah,
-  type Ayah
+  type Ayah,
+  type AyahPracticeLog,
+  type InsertAyahPracticeLog
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -58,6 +61,12 @@ export interface IStorage {
   createCachedAudioFile(audioFile: InsertCachedAudioFile): Promise<CachedAudioFile>;
   updateCachedAudioFile(id: number, updates: Partial<InsertCachedAudioFile>): Promise<CachedAudioFile>;
   preloadAudioFiles(surahId: number): Promise<void>;
+  
+  logAyahPractice(userId: number, surahId: number, ayahNumber: number, duration: number): Promise<void>;
+  getAyahHeatmapData(userId: number): Promise<{ surahId: number; ayahNumber: number; count: number; lastPracticed: string }[]>;
+  getSurahProgress(userId: number, surahId: number): Promise<{ ayahNumber: number; count: number; lastPracticed: string }[]>;
+  getCalendarData(userId: number, year: number, month: number): Promise<{ date: string; count: number; duration: number }[]>;
+  getMostPracticedAyahs(userId: number, limit: number): Promise<{ surahId: number; surahName: string; ayahNumber: number; count: number }[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -380,6 +389,177 @@ export class DatabaseStorage implements IStorage {
     }
 
     console.log(`Completed preloading audio files for Surah ${surahId}`);
+  }
+
+  async logAyahPractice(userId: number, surahId: number, ayahNumber: number, duration: number): Promise<void> {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    // Check if there's already a log for this user, surah, ayah, and date
+    const [existing] = await db
+      .select()
+      .from(ayahPracticeLog)
+      .where(
+        and(
+          eq(ayahPracticeLog.userId, userId),
+          eq(ayahPracticeLog.surahId, surahId),
+          eq(ayahPracticeLog.ayahNumber, ayahNumber),
+          eq(ayahPracticeLog.practiceDate, today)
+        )
+      );
+
+    if (existing) {
+      // Update existing log
+      await db
+        .update(ayahPracticeLog)
+        .set({
+          listenCount: existing.listenCount + 1,
+          totalDuration: existing.totalDuration + duration,
+          updatedAt: new Date()
+        })
+        .where(eq(ayahPracticeLog.id, existing.id));
+    } else {
+      // Create new log
+      await db.insert(ayahPracticeLog).values({
+        userId,
+        surahId,
+        ayahNumber,
+        practiceDate: today,
+        listenCount: 1,
+        totalDuration: duration
+      });
+    }
+  }
+
+  async getAyahHeatmapData(userId: number): Promise<{ surahId: number; ayahNumber: number; count: number; lastPracticed: string }[]> {
+    const logs = await db
+      .select({
+        surahId: ayahPracticeLog.surahId,
+        ayahNumber: ayahPracticeLog.ayahNumber,
+        count: ayahPracticeLog.listenCount,
+        lastPracticed: ayahPracticeLog.practiceDate
+      })
+      .from(ayahPracticeLog)
+      .where(eq(ayahPracticeLog.userId, userId))
+      .orderBy(desc(ayahPracticeLog.updatedAt));
+
+    // Aggregate by surah and ayah
+    const aggregated = new Map<string, { surahId: number; ayahNumber: number; count: number; lastPracticed: string }>();
+    
+    for (const log of logs) {
+      const key = `${log.surahId}-${log.ayahNumber}`;
+      const existing = aggregated.get(key);
+      
+      if (!existing || log.lastPracticed > existing.lastPracticed) {
+        aggregated.set(key, {
+          surahId: log.surahId,
+          ayahNumber: log.ayahNumber,
+          count: (existing?.count || 0) + log.count,
+          lastPracticed: log.lastPracticed
+        });
+      }
+    }
+
+    return Array.from(aggregated.values());
+  }
+
+  async getSurahProgress(userId: number, surahId: number): Promise<{ ayahNumber: number; count: number; lastPracticed: string }[]> {
+    const logs = await db
+      .select({
+        ayahNumber: ayahPracticeLog.ayahNumber,
+        count: ayahPracticeLog.listenCount,
+        lastPracticed: ayahPracticeLog.practiceDate
+      })
+      .from(ayahPracticeLog)
+      .where(
+        and(
+          eq(ayahPracticeLog.userId, userId),
+          eq(ayahPracticeLog.surahId, surahId)
+        )
+      )
+      .orderBy(desc(ayahPracticeLog.updatedAt));
+
+    // Aggregate by ayah
+    const aggregated = new Map<number, { ayahNumber: number; count: number; lastPracticed: string }>();
+    
+    for (const log of logs) {
+      const existing = aggregated.get(log.ayahNumber);
+      
+      if (!existing || log.lastPracticed > existing.lastPracticed) {
+        aggregated.set(log.ayahNumber, {
+          ayahNumber: log.ayahNumber,
+          count: (existing?.count || 0) + log.count,
+          lastPracticed: log.lastPracticed
+        });
+      }
+    }
+
+    return Array.from(aggregated.values()).sort((a, b) => a.ayahNumber - b.ayahNumber);
+  }
+
+  async getCalendarData(userId: number, year: number, month: number): Promise<{ date: string; count: number; duration: number }[]> {
+    const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+    const endDate = `${year}-${month.toString().padStart(2, '0')}-31`;
+    
+    const logs = await db
+      .select({
+        date: ayahPracticeLog.practiceDate,
+        count: ayahPracticeLog.listenCount,
+        duration: ayahPracticeLog.totalDuration
+      })
+      .from(ayahPracticeLog)
+      .where(
+        and(
+          eq(ayahPracticeLog.userId, userId)
+        )
+      );
+
+    // Aggregate by date
+    const aggregated = new Map<string, { date: string; count: number; duration: number }>();
+    
+    for (const log of logs) {
+      if (log.date >= startDate && log.date <= endDate) {
+        const existing = aggregated.get(log.date);
+        aggregated.set(log.date, {
+          date: log.date,
+          count: (existing?.count || 0) + log.count,
+          duration: (existing?.duration || 0) + log.duration
+        });
+      }
+    }
+
+    return Array.from(aggregated.values()).sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  async getMostPracticedAyahs(userId: number, limit: number): Promise<{ surahId: number; surahName: string; ayahNumber: number; count: number }[]> {
+    const logs = await db
+      .select({
+        surahId: ayahPracticeLog.surahId,
+        surahName: surahs.name,
+        ayahNumber: ayahPracticeLog.ayahNumber,
+        count: ayahPracticeLog.listenCount
+      })
+      .from(ayahPracticeLog)
+      .innerJoin(surahs, eq(ayahPracticeLog.surahId, surahs.id))
+      .where(eq(ayahPracticeLog.userId, userId));
+
+    // Aggregate by surah and ayah
+    const aggregated = new Map<string, { surahId: number; surahName: string; ayahNumber: number; count: number }>();
+    
+    for (const log of logs) {
+      const key = `${log.surahId}-${log.ayahNumber}`;
+      const existing = aggregated.get(key);
+      
+      aggregated.set(key, {
+        surahId: log.surahId,
+        surahName: log.surahName,
+        ayahNumber: log.ayahNumber,
+        count: (existing?.count || 0) + log.count
+      });
+    }
+
+    return Array.from(aggregated.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit);
   }
 }
 
