@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RotateCcw, Share, Flame } from "lucide-react";
+import { RotateCcw, Share, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Link } from "wouter";
@@ -68,12 +68,12 @@ export const QuickActions = ({
           
           <Link href="/memorization">
             <Button
-              className="p-4 bg-gradient-to-br from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-lg transition-all text-center flex-col h-auto shadow-md hover:shadow-lg transform hover:scale-105"
+              className="p-4 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-lg transition-all text-center flex-col h-auto shadow-md hover:shadow-lg transform hover:scale-105"
               data-testid="button-memorization"
             >
-              <Flame className="h-6 w-6 text-white mb-2" />
+              <BookOpen className="h-6 w-6 text-white mb-2" />
               <span className="text-sm font-semibold text-white">{t('memorization')}</span>
-              <span className="text-xs text-orange-100 mt-1">{t('viewHeatmap')}</span>
+              <span className="text-xs text-blue-100 mt-1">{t('viewProgress')}</span>
             </Button>
           </Link>
           

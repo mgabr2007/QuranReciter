@@ -73,7 +73,7 @@ export const translations = {
     shareText: "I'm practicing Quran recitation - {{surah}}, Ayah {{ayah}}. You can do the same join me: {{url}}",
     copiedToClipboard: "Copied to clipboard",
     progressShared: "Progress shared to clipboard",
-    viewHeatmap: "View Heatmap",
+    viewProgress: "View Progress",
     
     // Bookmarks Page
     myBookmarks: "My Bookmarks",
@@ -133,11 +133,11 @@ export const translations = {
     // Memorization Page
     memorization: "Memorization",
     memorization_subtitle: "Track your Quran memorization progress",
-    heatmap: "Heatmap",
+    heatmap: "Practice Map",
     calendar: "Calendar",
     surah_progress: "Surah Progress",
     top_ayahs: "Top Ayahs",
-    practice_heatmap: "Practice Heatmap",
+    practice_heatmap: "Practice Tracker",
     heatmap_description: "Visual representation of your practice frequency for each ayah",
     practice_calendar: "Practice Calendar",
     calendar_description: "Your daily practice activity",
@@ -245,7 +245,7 @@ export const translations = {
     shareText: "أتدرب على تلاوة القرآن - {{surah}}، الآية {{ayah}}. يمكنك أن تفعل الشيء نفسه انضم إلي: {{url}}",
     copiedToClipboard: "تم النسخ إلى الحافظة",
     progressShared: "تمت مشاركة التقدم إلى الحافظة",
-    viewHeatmap: "عرض الخريطة",
+    viewProgress: "عرض التقدم",
     
     // Bookmarks Page
     myBookmarks: "مفضلاتي",
@@ -305,11 +305,11 @@ export const translations = {
     // Memorization Page
     memorization: "الحفظ",
     memorization_subtitle: "تتبع تقدم حفظ القرآن",
-    heatmap: "خريطة التدريب",
+    heatmap: "متتبع التدريب",
     calendar: "التقويم",
     surah_progress: "تقدم السورة",
     top_ayahs: "أكثر الآيات تدريباً",
-    practice_heatmap: "خريطة التدريب",
+    practice_heatmap: "متتبع التدريب",
     heatmap_description: "تمثيل مرئي لتكرار التدريب لكل آية",
     practice_calendar: "تقويم التدريب",
     calendar_description: "نشاط التدريب اليومي",
