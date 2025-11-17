@@ -86,10 +86,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User preferences routes
-  app.get("/api/preferences", async (req, res) => {
+  app.get("/api/preferences", requireAuth, async (req, res) => {
     try {
-      // For demo purposes, using a default user ID of 1
-      const userId = 1;
+      const userId = (req as AuthenticatedRequest).user!.id;
       let preferences = await storage.getUserPreferences(userId);
       
       if (!preferences) {
@@ -111,9 +110,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/preferences", async (req, res) => {
+  app.put("/api/preferences", requireAuth, async (req, res) => {
     try {
-      const userId = 1; // Demo user ID
+      const userId = (req as AuthenticatedRequest).user!.id;
       const validatedData = insertUserPreferencesSchema.parse({
         ...req.body,
         userId,
@@ -127,9 +126,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Recitation session routes
-  app.post("/api/sessions", async (req, res) => {
+  app.post("/api/sessions", requireAuth, async (req, res) => {
     try {
-      const userId = 1; // Demo user ID
+      const userId = (req as AuthenticatedRequest).user!.id;
       const validatedData = insertRecitationSessionSchema.parse({
         ...req.body,
         userId,
@@ -142,8 +141,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/sessions/:id", async (req, res) => {
+  app.put("/api/sessions/:id", requireAuth, async (req, res) => {
     try {
+      const userId = (req as AuthenticatedRequest).user!.id;
       const sessionId = parseInt(req.params.id);
       const session = await storage.updateRecitationSession(sessionId, req.body);
       res.json(session);
@@ -152,9 +152,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/sessions", async (req, res) => {
+  app.get("/api/sessions", requireAuth, async (req, res) => {
     try {
-      const userId = 1; // Demo user ID
+      const userId = (req as AuthenticatedRequest).user!.id;
       const sessions = await storage.getUserSessions(userId);
       res.json(sessions);
     } catch (error) {
@@ -162,9 +162,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/sessions/stats/:userId", async (req, res) => {
+  app.get("/api/sessions/stats", requireAuth, async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = (req as AuthenticatedRequest).user!.id;
       const stats = await storage.getSessionStats(userId);
       res.json(stats);
     } catch (error) {
@@ -173,9 +173,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bookmark routes
-  app.post("/api/bookmarks", async (req, res) => {
+  app.post("/api/bookmarks", requireAuth, async (req, res) => {
     try {
-      const userId = 1; // Demo user ID
+      const userId = (req as AuthenticatedRequest).user!.id;
       const validatedData = insertBookmarkedAyahSchema.parse({
         ...req.body,
         userId,
@@ -188,9 +188,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/bookmarks", async (req, res) => {
+  app.get("/api/bookmarks", requireAuth, async (req, res) => {
     try {
-      const userId = 1; // Demo user ID
+      const userId = (req as AuthenticatedRequest).user!.id;
       const bookmarks = await storage.getUserBookmarks(userId);
       res.json(bookmarks);
     } catch (error) {
@@ -198,8 +198,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/bookmarks/:id", async (req, res) => {
+  app.patch("/api/bookmarks/:id", requireAuth, async (req, res) => {
     try {
+      const userId = (req as AuthenticatedRequest).user!.id;
       const bookmarkId = parseInt(req.params.id);
       const { notes } = req.body;
       const bookmark = await storage.updateBookmark(bookmarkId, { notes });
@@ -209,8 +210,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/bookmarks/:id", async (req, res) => {
+  app.delete("/api/bookmarks/:id", requireAuth, async (req, res) => {
     try {
+      const userId = (req as AuthenticatedRequest).user!.id;
       const bookmarkId = parseInt(req.params.id);
       await storage.deleteBookmark(bookmarkId);
       res.json({ message: "Bookmark deleted" });
@@ -266,9 +268,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Practice tracking routes for memorization heatmap
-  app.post("/api/practice/log", async (req, res) => {
+  app.post("/api/practice/log", requireAuth, async (req, res) => {
     try {
-      const userId = 1; // Demo user ID
+      const userId = (req as AuthenticatedRequest).user!.id;
       const { surahId, ayahNumber, duration } = req.body;
       
       await storage.logAyahPractice(userId, surahId, ayahNumber, duration || 0);
@@ -278,9 +280,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/practice/heatmap", async (req, res) => {
+  app.get("/api/practice/heatmap", requireAuth, async (req, res) => {
     try {
-      const userId = 1; // Demo user ID
+      const userId = (req as AuthenticatedRequest).user!.id;
       const heatmapData = await storage.getAyahHeatmapData(userId);
       res.json(heatmapData);
     } catch (error) {
@@ -288,9 +290,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/practice/surah/:surahId", async (req, res) => {
+  app.get("/api/practice/surah/:surahId", requireAuth, async (req, res) => {
     try {
-      const userId = 1; // Demo user ID
+      const userId = (req as AuthenticatedRequest).user!.id;
       const surahId = parseInt(req.params.surahId);
       const progress = await storage.getSurahProgress(userId, surahId);
       res.json(progress);
@@ -299,9 +301,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/practice/calendar/:year/:month", async (req, res) => {
+  app.get("/api/practice/calendar/:year/:month", requireAuth, async (req, res) => {
     try {
-      const userId = 1; // Demo user ID
+      const userId = (req as AuthenticatedRequest).user!.id;
       const year = parseInt(req.params.year);
       const month = parseInt(req.params.month);
       const calendarData = await storage.getCalendarData(userId, year, month);
@@ -311,9 +313,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/practice/top/:limit", async (req, res) => {
+  app.get("/api/practice/top/:limit", requireAuth, async (req, res) => {
     try {
-      const userId = 1; // Demo user ID
+      const userId = (req as AuthenticatedRequest).user!.id;
       const limit = parseInt(req.params.limit);
       const topAyahs = await storage.getMostPracticedAyahs(userId, limit);
       res.json(topAyahs);
