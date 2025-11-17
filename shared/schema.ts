@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, jsonb, timestamp, varchar, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, jsonb, timestamp, varchar, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
@@ -261,12 +261,14 @@ export const communityMembers = pgTable("community_members", {
 // Juz assignments table
 export const juzAssignments = pgTable("juz_assignments", {
   id: serial("id").primaryKey(),
-  communityMemberId: integer("community_member_id").notNull().references(() => communityMembers.id, { onDelete: 'cascade' }),
+  communityMemberId: integer("community_member_id").notNull().references(() => communityMembers.id, { onDelete: 'cascade' }).unique(),
+  communityId: integer("community_id").notNull().references(() => communities.id, { onDelete: 'cascade' }),
   juzNumber: integer("juz_number").notNull(), // 1-30
   assignedAt: timestamp("assigned_at").defaultNow(),
   canModifyUntil: timestamp("can_modify_until").notNull(), // 2 days from assignment
 }, (table) => ({
   communityMemberIdx: index("community_member_idx").on(table.communityMemberId),
+  uniqueJuzPerCommunity: uniqueIndex("unique_juz_per_community_idx").on(table.communityId, table.juzNumber),
 }));
 
 // Weekly tracking table

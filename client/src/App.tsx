@@ -9,6 +9,9 @@ import Home from "@/pages/home";
 import History from "@/pages/history";
 import Bookmarks from "@/pages/bookmarks";
 import Memorization from "@/pages/memorization";
+import Communities from "@/pages/communities";
+import CreateCommunity from "@/pages/create-community";
+import MyCommunities from "@/pages/my-communities";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import NotFound from "@/pages/not-found";
@@ -22,6 +25,9 @@ function Router() {
       <Route path="/history" component={History} />
       <Route path="/bookmarks" component={Bookmarks} />
       <Route path="/memorization" component={Memorization} />
+      <Route path="/communities" component={Communities} />
+      <Route path="/communities/create" component={CreateCommunity} />
+      <Route path="/my-communities" component={MyCommunities} />
       <Route component={NotFound} />
     </Switch>
   );

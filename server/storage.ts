@@ -7,6 +7,9 @@ import {
   surahs,
   ayahs,
   ayahPracticeLog,
+  communities,
+  communityMembers,
+  juzAssignments,
   type User, 
   type InsertUser,
   type UserPreferences,
@@ -20,10 +23,16 @@ import {
   type Surah,
   type Ayah,
   type AyahPracticeLog,
-  type InsertAyahPracticeLog
+  type InsertAyahPracticeLog,
+  type Community,
+  type InsertCommunity,
+  type CommunityMember,
+  type InsertCommunityMember,
+  type JuzAssignment,
+  type InsertJuzAssignment
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql, notInArray } from "drizzle-orm";
 
 export interface IStorage {
   getUserById(id: number): Promise<User | undefined>;
@@ -69,6 +78,17 @@ export interface IStorage {
   getSurahProgress(userId: number, surahId: number): Promise<{ ayahNumber: number; count: number; lastPracticed: string }[]>;
   getCalendarData(userId: number, year: number, month: number): Promise<{ date: string; count: number; duration: number }[]>;
   getMostPracticedAyahs(userId: number, limit: number): Promise<{ surahId: number; surahName: string; ayahNumber: number; count: number }[]>;
+  
+  createCommunity(community: InsertCommunity): Promise<Community>;
+  getCommunities(): Promise<Community[]>;
+  getCommunity(id: number): Promise<Community | undefined>;
+  getUserCommunities(userId: number): Promise<Array<Community & { memberCount: number; juzNumber: number | null }>>;
+  joinCommunity(userId: number, communityId: number): Promise<{ member: CommunityMember; assignment: JuzAssignment }>;
+  getAvailableJuz(communityId: number): Promise<number[]>;
+  getCommunityMembers(communityId: number): Promise<Array<CommunityMember & { user: User; juzNumber: number | null }>>;
+  getUserJuzAssignment(userId: number, communityId: number): Promise<JuzAssignment | undefined>;
+  updateJuzAssignment(userId: number, communityId: number, newJuzNumber: number): Promise<JuzAssignment>;
+  canModifyJuzAssignment(userId: number, communityId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -571,6 +591,219 @@ export class DatabaseStorage implements IStorage {
     return Array.from(aggregated.values())
       .sort((a, b) => b.count - a.count)
       .slice(0, limit);
+  }
+
+  async createCommunity(community: InsertCommunity): Promise<Community> {
+    const [created] = await db
+      .insert(communities)
+      .values(community)
+      .returning();
+    return created;
+  }
+
+  async getCommunities(): Promise<Community[]> {
+    return await db.select().from(communities);
+  }
+
+  async getCommunity(id: number): Promise<Community | undefined> {
+    const [community] = await db
+      .select()
+      .from(communities)
+      .where(eq(communities.id, id));
+    return community || undefined;
+  }
+
+  async getUserCommunities(userId: number): Promise<Array<Community & { memberCount: number; juzNumber: number | null }>> {
+    const userMemberships = await db
+      .select({
+        community: communities,
+        memberId: communityMembers.id,
+        juzNumber: juzAssignments.juzNumber
+      })
+      .from(communityMembers)
+      .innerJoin(communities, eq(communityMembers.communityId, communities.id))
+      .leftJoin(juzAssignments, eq(juzAssignments.communityMemberId, communityMembers.id))
+      .where(eq(communityMembers.userId, userId));
+
+    const result = [];
+    for (const membership of userMemberships) {
+      const memberCount = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(communityMembers)
+        .where(eq(communityMembers.communityId, membership.community.id));
+
+      result.push({
+        ...membership.community,
+        memberCount: memberCount[0]?.count || 0,
+        juzNumber: membership.juzNumber
+      });
+    }
+
+    return result;
+  }
+
+  async joinCommunity(userId: number, communityId: number): Promise<{ member: CommunityMember; assignment: JuzAssignment }> {
+    return await db.transaction(async (tx) => {
+      // Check existing membership
+      const existingMember = await tx
+        .select()
+        .from(communityMembers)
+        .where(and(eq(communityMembers.userId, userId), eq(communityMembers.communityId, communityId)));
+
+      if (existingMember.length > 0) {
+        throw new Error("User is already a member of this community");
+      }
+
+      // Get community with lock to prevent race conditions
+      const [community] = await tx
+        .select()
+        .from(communities)
+        .where(eq(communities.id, communityId))
+        .for('update');
+
+      if (!community) {
+        throw new Error("Community not found");
+      }
+
+      // Count members with lock
+      const memberCount = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(communityMembers)
+        .where(eq(communityMembers.communityId, communityId))
+        .for('update');
+
+      if (memberCount[0]?.count >= community.maxMembers) {
+        throw new Error("Community is full");
+      }
+
+      // Insert member
+      const [member] = await tx
+        .insert(communityMembers)
+        .values({ userId, communityId })
+        .returning();
+
+      // Get assigned juz with lock to prevent duplicates
+      const assignedJuz = await tx
+        .select({ juzNumber: juzAssignments.juzNumber })
+        .from(juzAssignments)
+        .where(eq(juzAssignments.communityId, communityId))
+        .for('update');
+
+      const assigned = new Set(assignedJuz.map(j => j.juzNumber));
+      const allJuz = Array.from({ length: 30 }, (_, i) => i + 1);
+      const availableJuz = allJuz.filter(j => !assigned.has(j));
+
+      if (availableJuz.length === 0) {
+        throw new Error("No available juz in this community");
+      }
+
+      const selectedJuz = availableJuz[0];
+      const canModifyUntil = new Date();
+      canModifyUntil.setDate(canModifyUntil.getDate() + 2);
+
+      // Insert juz assignment
+      const [assignment] = await tx
+        .insert(juzAssignments)
+        .values({
+          communityMemberId: member.id,
+          communityId: communityId,
+          juzNumber: selectedJuz,
+          canModifyUntil
+        })
+        .returning();
+
+      return { member, assignment };
+    });
+  }
+
+  async getAvailableJuz(communityId: number): Promise<number[]> {
+    const assignedJuz = await db
+      .select({ juzNumber: juzAssignments.juzNumber })
+      .from(juzAssignments)
+      .innerJoin(communityMembers, eq(juzAssignments.communityMemberId, communityMembers.id))
+      .where(eq(communityMembers.communityId, communityId));
+
+    const assigned = new Set(assignedJuz.map(j => j.juzNumber));
+    const allJuz = Array.from({ length: 30 }, (_, i) => i + 1);
+    return allJuz.filter(j => !assigned.has(j));
+  }
+
+  async getCommunityMembers(communityId: number): Promise<Array<CommunityMember & { user: User; juzNumber: number | null }>> {
+    const members = await db
+      .select({
+        member: communityMembers,
+        user: users,
+        juzNumber: juzAssignments.juzNumber
+      })
+      .from(communityMembers)
+      .innerJoin(users, eq(communityMembers.userId, users.id))
+      .leftJoin(juzAssignments, eq(juzAssignments.communityMemberId, communityMembers.id))
+      .where(eq(communityMembers.communityId, communityId));
+
+    return members.map(m => ({
+      ...m.member,
+      user: m.user,
+      juzNumber: m.juzNumber
+    }));
+  }
+
+  async getUserJuzAssignment(userId: number, communityId: number): Promise<JuzAssignment | undefined> {
+    const [result] = await db
+      .select({ assignment: juzAssignments })
+      .from(juzAssignments)
+      .innerJoin(communityMembers, eq(juzAssignments.communityMemberId, communityMembers.id))
+      .where(
+        and(
+          eq(communityMembers.userId, userId),
+          eq(communityMembers.communityId, communityId)
+        )
+      );
+
+    return result?.assignment;
+  }
+
+  async updateJuzAssignment(userId: number, communityId: number, newJuzNumber: number): Promise<JuzAssignment> {
+    const canModify = await this.canModifyJuzAssignment(userId, communityId);
+    if (!canModify) {
+      throw new Error("Cannot modify juz assignment - 2-day window has expired");
+    }
+
+    const availableJuz = await this.getAvailableJuz(communityId);
+    if (!availableJuz.includes(newJuzNumber)) {
+      throw new Error("Juz is already assigned to another member");
+    }
+
+    const [member] = await db
+      .select()
+      .from(communityMembers)
+      .where(
+        and(
+          eq(communityMembers.userId, userId),
+          eq(communityMembers.communityId, communityId)
+        )
+      );
+
+    if (!member) {
+      throw new Error("User is not a member of this community");
+    }
+
+    const [updated] = await db
+      .update(juzAssignments)
+      .set({ juzNumber: newJuzNumber })
+      .where(eq(juzAssignments.communityMemberId, member.id))
+      .returning();
+
+    return updated;
+  }
+
+  async canModifyJuzAssignment(userId: number, communityId: number): Promise<boolean> {
+    const assignment = await this.getUserJuzAssignment(userId, communityId);
+    if (!assignment) {
+      return false;
+    }
+
+    const now = new Date();
+    return now <= new Date(assignment.canModifyUntil);
   }
 }
 

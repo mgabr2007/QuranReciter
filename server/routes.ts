@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { storage } from "./storage";
-import { insertUserPreferencesSchema, insertRecitationSessionSchema, insertBookmarkedAyahSchema } from "@shared/schema";
+import { insertUserPreferencesSchema, insertRecitationSessionSchema, insertBookmarkedAyahSchema, insertCommunitySchema } from "@shared/schema";
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { signup, login, logout, getCurrentUser, requireAuth, type AuthenticatedRequest } from "./auth";
@@ -321,6 +321,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(topAyahs);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch most practiced ayahs" });
+    }
+  });
+
+  // Community routes
+  app.post("/api/communities", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as AuthenticatedRequest).user!.id;
+      const validatedData = insertCommunitySchema.parse({ ...req.body, adminId: userId });
+      const community = await storage.createCommunity(validatedData);
+      res.status(201).json(community);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || "Failed to create community" });
+    }
+  });
+
+  app.get("/api/communities", async (req, res) => {
+    try {
+      const communities = await storage.getCommunities();
+      res.json(communities);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch communities" });
+    }
+  });
+
+  app.get("/api/my-communities", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as AuthenticatedRequest).user!.id;
+      const communities = await storage.getUserCommunities(userId);
+      res.json(communities);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user communities" });
+    }
+  });
+
+  app.get("/api/communities/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const community = await storage.getCommunity(id);
+      if (!community) {
+        return res.status(404).json({ message: "Community not found" });
+      }
+      res.json(community);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch community" });
+    }
+  });
+
+  app.post("/api/communities/:id/join", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as AuthenticatedRequest).user!.id;
+      const communityId = parseInt(req.params.id);
+      const result = await storage.joinCommunity(userId, communityId);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || "Failed to join community" });
+    }
+  });
+
+  app.get("/api/communities/:id/members", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.id);
+      const members = await storage.getCommunityMembers(communityId);
+      res.json(members);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch community members" });
+    }
+  });
+
+  app.get("/api/communities/:id/available-juz", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.id);
+      const availableJuz = await storage.getAvailableJuz(communityId);
+      res.json(availableJuz);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch available juz" });
+    }
+  });
+
+  app.patch("/api/communities/:id/juz-assignment", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as AuthenticatedRequest).user!.id;
+      const communityId = parseInt(req.params.id);
+      const { juzNumber } = req.body;
+      
+      if (!juzNumber || juzNumber < 1 || juzNumber > 30) {
+        return res.status(400).json({ message: "Invalid juz number" });
+      }
+
+      const updated = await storage.updateJuzAssignment(userId, communityId, juzNumber);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || "Failed to update juz assignment" });
+    }
+  });
+
+  app.get("/api/communities/:id/can-modify-juz", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as AuthenticatedRequest).user!.id;
+      const communityId = parseInt(req.params.id);
+      const canModify = await storage.canModifyJuzAssignment(userId, communityId);
+      res.json({ canModify });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to check modification permission" });
     }
   });
 

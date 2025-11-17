@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, History, Heart } from "lucide-react";
+import { User, LogOut, History, Heart, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export function UserMenu() {
@@ -86,6 +86,12 @@ export function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <Link href="/my-communities">
+          <DropdownMenuItem className="cursor-pointer" data-testid="menu-my-communities">
+            <Users className="mr-2 h-4 w-4" />
+            <span>My Communities</span>
+          </DropdownMenuItem>
+        </Link>
         <Link href="/history">
           <DropdownMenuItem className="cursor-pointer" data-testid="menu-history">
             <History className="mr-2 h-4 w-4" />
