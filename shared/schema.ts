@@ -7,6 +7,10 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  email: text("email").unique(),
+  displayName: text("display_name"),
+  role: varchar("role", { length: 20 }).notNull().default('member'), // 'member' or 'admin'
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const userPreferences = pgTable("user_preferences", {
@@ -117,9 +121,9 @@ export const ayahs = pgTable("ayahs", {
   translationSearchIdx: index("translation_search_idx").on(table.translation),
 }));
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({
@@ -229,5 +233,124 @@ export const ayahPracticeLogRelations = relations(ayahPracticeLog, ({ one }) => 
   surah: one(surahs, {
     fields: [ayahPracticeLog.surahId],
     references: [surahs.id],
+  }),
+}));
+
+// Communities table
+export const communities = pgTable("communities", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  adminId: integer("admin_id").notNull().references(() => users.id),
+  maxMembers: integer("max_members").notNull().default(30),
+  weekStartDay: integer("week_start_day").notNull().default(5), // 0=Sunday, 5=Friday
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Community members table
+export const communityMembers = pgTable("community_members", {
+  id: serial("id").primaryKey(),
+  communityId: integer("community_id").notNull().references(() => communities.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  joinedAt: timestamp("joined_at").defaultNow(),
+}, (table) => ({
+  uniqueMembership: index("unique_membership_idx").on(table.communityId, table.userId),
+}));
+
+// Juz assignments table
+export const juzAssignments = pgTable("juz_assignments", {
+  id: serial("id").primaryKey(),
+  communityMemberId: integer("community_member_id").notNull().references(() => communityMembers.id, { onDelete: 'cascade' }),
+  juzNumber: integer("juz_number").notNull(), // 1-30
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  canModifyUntil: timestamp("can_modify_until").notNull(), // 2 days from assignment
+}, (table) => ({
+  communityMemberIdx: index("community_member_idx").on(table.communityMemberId),
+}));
+
+// Weekly tracking table
+export const weeklyProgress = pgTable("weekly_progress", {
+  id: serial("id").primaryKey(),
+  communityMemberId: integer("community_member_id").notNull().references(() => communityMembers.id, { onDelete: 'cascade' }),
+  juzNumber: integer("juz_number").notNull(), // 1-30
+  weekStartDate: text("week_start_date").notNull(), // YYYY-MM-DD format (Friday)
+  completedAyahs: integer("completed_ayahs").notNull().default(0),
+  totalAyahsInJuz: integer("total_ayahs_in_juz").notNull(),
+  isCompleted: boolean("is_completed").notNull().default(false),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  memberWeekIdx: index("member_week_idx").on(table.communityMemberId, table.weekStartDate),
+  weekJuzIdx: index("week_juz_idx").on(table.weekStartDate, table.juzNumber),
+}));
+
+// Insert schemas for community tables
+export const insertCommunitySchema = createInsertSchema(communities).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCommunityMemberSchema = createInsertSchema(communityMembers).omit({
+  id: true,
+  joinedAt: true,
+});
+
+export const insertJuzAssignmentSchema = createInsertSchema(juzAssignments).omit({
+  id: true,
+  assignedAt: true,
+});
+
+export const insertWeeklyProgressSchema = createInsertSchema(weeklyProgress).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Types for community tables
+export type Community = typeof communities.$inferSelect;
+export type InsertCommunity = z.infer<typeof insertCommunitySchema>;
+export type CommunityMember = typeof communityMembers.$inferSelect;
+export type InsertCommunityMember = z.infer<typeof insertCommunityMemberSchema>;
+export type JuzAssignment = typeof juzAssignments.$inferSelect;
+export type InsertJuzAssignment = z.infer<typeof insertJuzAssignmentSchema>;
+export type WeeklyProgress = typeof weeklyProgress.$inferSelect;
+export type InsertWeeklyProgress = z.infer<typeof insertWeeklyProgressSchema>;
+
+// Relations for community tables
+export const communitiesRelations = relations(communities, ({ one, many }) => ({
+  admin: one(users, {
+    fields: [communities.adminId],
+    references: [users.id],
+  }),
+  members: many(communityMembers),
+}));
+
+export const communityMembersRelations = relations(communityMembers, ({ one, many }) => ({
+  community: one(communities, {
+    fields: [communityMembers.communityId],
+    references: [communities.id],
+  }),
+  user: one(users, {
+    fields: [communityMembers.userId],
+    references: [users.id],
+  }),
+  juzAssignments: many(juzAssignments),
+  weeklyProgress: many(weeklyProgress),
+}));
+
+export const juzAssignmentsRelations = relations(juzAssignments, ({ one }) => ({
+  communityMember: one(communityMembers, {
+    fields: [juzAssignments.communityMemberId],
+    references: [communityMembers.id],
+  }),
+}));
+
+export const weeklyProgressRelations = relations(weeklyProgress, ({ one }) => ({
+  communityMember: one(communityMembers, {
+    fields: [weeklyProgress.communityMemberId],
+    references: [communityMembers.id],
   }),
 }));

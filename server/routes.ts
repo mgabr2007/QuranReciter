@@ -1,11 +1,43 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
 import { storage } from "./storage";
 import { insertUserPreferencesSchema, insertRecitationSessionSchema, insertBookmarkedAyahSchema } from "@shared/schema";
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import { signup, login, logout, getCurrentUser, requireAuth, type AuthenticatedRequest } from "./auth";
+import { db } from "./db";
+
+const PgSession = connectPgSimple(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Session middleware
+  app.use(
+    session({
+      store: new PgSession({
+        pool: db as any,
+        tableName: 'session',
+        createTableIfMissing: true,
+      }),
+      secret: process.env.SESSION_SECRET || 'quran-recitation-secret-change-this-in-production',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+      },
+    })
+  );
+
+  // Authentication routes
+  app.post("/api/auth/signup", signup);
+  app.post("/api/auth/login", login);
+  app.post("/api/auth/logout", logout);
+  app.get("/api/auth/me", getCurrentUser);
+
   // Quran data routes
   app.get("/api/surahs", async (req, res) => {
     try {
