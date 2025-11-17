@@ -9,6 +9,7 @@ import { AyahDisplay } from "@/components/ayah-display";
 import { QuickActions } from "@/components/quick-actions";
 import { VerseSearch } from "@/components/verse-search";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { UserMenu } from "@/components/user-menu";
 import { useSimpleAudio } from "@/hooks/use-simple-audio";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -309,6 +310,7 @@ export default function Home() {
             </Button>
             
             <LanguageSwitcher />
+            <UserMenu />
           </>
         }
       />
