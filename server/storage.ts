@@ -665,12 +665,11 @@ export class DatabaseStorage implements IStorage {
         throw new Error("Community not found");
       }
 
-      // Count members with lock
+      // Count members (no lock needed - community lock protects member count)
       const memberCount = await tx
         .select({ count: sql<number>`count(*)::int` })
         .from(communityMembers)
-        .where(eq(communityMembers.communityId, communityId))
-        .for('update');
+        .where(eq(communityMembers.communityId, communityId));
 
       if (memberCount[0]?.count >= community.maxMembers) {
         throw new Error("Community is full");
