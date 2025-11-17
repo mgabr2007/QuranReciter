@@ -7,7 +7,7 @@ import { insertUserPreferencesSchema, insertRecitationSessionSchema, insertBookm
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { signup, login, logout, getCurrentUser, requireAuth, type AuthenticatedRequest } from "./auth";
-import { db } from "./db";
+import { db, pool } from "./db";
 
 const PgSession = connectPgSimple(session);
 
@@ -16,7 +16,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(
     session({
       store: new PgSession({
-        pool: db as any,
+        pool: pool,
         tableName: 'session',
         createTableIfMissing: true,
       }),
