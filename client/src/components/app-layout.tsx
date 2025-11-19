@@ -21,8 +21,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className="min-h-screen bg-background">
       <Sidebar />
       
-      {/* Main content area */}
-      <div className="lg:pl-64">
+      {/* Main content area - uses ps (padding-start) which respects RTL/LTR direction */}
+      <div className="lg:ps-64">
         {/* Top bar */}
         <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
