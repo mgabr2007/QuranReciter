@@ -9,9 +9,12 @@ import { StatCard } from "@/components/stat-card";
 import { Button } from "@/components/ui/button";
 import { BookmarksList } from "@/components/bookmarks-list";
 import { FavoriteVersesCollection } from "@/components/favorite-verses-collection";
+import { useLanguage } from "@/i18n/LanguageContext";
 import type { BookmarkedAyah } from "@shared/schema";
 
 export default function Bookmarks() {
+  const { language } = useLanguage();
+  const isArabic = language === "ar";
   const [viewMode, setViewMode] = useState<'list' | 'collection'>('list');
   
   const { data: bookmarks = [], isLoading } = useQuery<BookmarkedAyah[]>({
@@ -27,16 +30,16 @@ export default function Bookmarks() {
     <>
       <Breadcrumb 
         items={[
-          { label: "Dashboard", href: "/" },
-          { label: "Bookmarks" }
+          { label: isArabic ? "لوحة التحكم" : "Dashboard", href: "/" },
+          { label: isArabic ? "الإشارات المرجعية" : "Bookmarks" }
         ]}
       />
       
       <PageHeader
         leftContent={<BackButton variant="ghost" className="text-islamic-green hover:bg-islamic-light" />}
         icon={<Heart className="h-6 w-6 text-white" />}
-        title="Bookmarked Verses"
-        subtitle="Your collection of favorite Quran verses"
+        title={isArabic ? "الآيات المحفوظة" : "Bookmarked Verses"}
+        subtitle={isArabic ? "مجموعة آياتك المفضلة من القرآن" : "Your collection of favorite Quran verses"}
         maxWidth="7xl"
         actions={
           <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
@@ -48,7 +51,7 @@ export default function Bookmarks() {
               data-testid="button-view-list"
             >
               <List className="h-4 w-4" />
-              Simple View
+              {isArabic ? "عرض بسيط" : "Simple View"}
             </Button>
             <Button
               variant={viewMode === 'collection' ? 'default' : 'ghost'}
@@ -58,7 +61,7 @@ export default function Bookmarks() {
               data-testid="button-view-collection"
             >
               <Star className="h-4 w-4" />
-              Collection View
+              {isArabic ? "عرض المجموعة" : "Collection View"}
             </Button>
           </div>
         }
@@ -70,20 +73,20 @@ export default function Bookmarks() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <StatCard 
             value={bookmarks.length} 
-            label="Total Bookmarks" 
+            label={isArabic ? "إجمالي الإشارات" : "Total Bookmarks"} 
             data-testid="stat-total-bookmarks"
           />
           <StatCard 
             value={new Set(bookmarks.map(b => b.surahId)).size} 
-            label="Unique Surahs"
+            label={isArabic ? "السور الفريدة" : "Unique Surahs"}
             data-testid="stat-unique-surahs"
           />
           <StatCard 
             value={bookmarks.length > 0 
-              ? new Date(Math.max(...bookmarks.map(b => new Date(b.createdAt).getTime()))).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              ? new Date(Math.max(...bookmarks.map(b => new Date(b.createdAt).getTime()))).toLocaleDateString(isArabic ? 'ar-SA' : 'en-US', { month: 'short', day: 'numeric' })
               : '-'
             } 
-            label="Latest Bookmark"
+            label={isArabic ? "آخر إشارة" : "Latest Bookmark"}
             data-testid="stat-latest-bookmark"
           />
         </div>
@@ -104,8 +107,8 @@ export default function Bookmarks() {
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-lg text-sm text-blue-700">
             <BookOpen className="h-4 w-4" />
             {viewMode === 'collection' 
-              ? "Use filters and search to organize your verses. Star your favorites and rate them!"
-              : "Click the play button next to any verse to start recitation from that point"
+              ? (isArabic ? "استخدم الفلاتر والبحث لتنظيم آياتك. ضع نجمة على المفضلة وقيمها!" : "Use filters and search to organize your verses. Star your favorites and rate them!")
+              : (isArabic ? "انقر على زر التشغيل بجانب أي آية لبدء التلاوة من تلك النقطة" : "Click the play button next to any verse to start recitation from that point")
             }
           </div>
         </div>
