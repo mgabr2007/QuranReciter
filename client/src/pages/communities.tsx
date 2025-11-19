@@ -11,6 +11,7 @@ import { PageLayout } from "@/components/page-layout";
 import { PageHeader } from "@/components/page-header";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { useAuth } from "@/hooks/use-auth";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface Community {
   id: number;
@@ -30,6 +31,8 @@ export default function Communities() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { language } = useLanguage();
+  const isArabic = language === "ar";
 
   const { data: communities, isLoading } = useQuery<Community[]>({
     queryKey: ["/api/communities"],
@@ -48,14 +51,16 @@ export default function Communities() {
       queryClient.invalidateQueries({ queryKey: ["/api/my-communities"] });
       queryClient.invalidateQueries({ queryKey: ["/api/communities"] });
       toast({
-        title: "Success!",
-        description: `You've joined the community and been assigned Juz ${data.assignment.juzNumber}!`,
+        title: isArabic ? "نجح!" : "Success!",
+        description: isArabic 
+          ? `لقد انضممت للمجتمع وتم تعيين الجزء ${data.assignment.juzNumber} لك!`
+          : `You've joined the community and been assigned Juz ${data.assignment.juzNumber}!`,
       });
     },
     onError: (error: Error) => {
       toast({
         variant: "destructive",
-        title: "Failed to join community",
+        title: isArabic ? "فشل الانضمام" : "Failed to join community",
         description: error.message,
       });
     },
@@ -69,13 +74,13 @@ export default function Communities() {
     <PageLayout>
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <Breadcrumb items={[
-          { label: "Home", href: "/" },
-          { label: "Communities" }
+          { label: isArabic ? "لوحة التحكم" : "Home", href: "/" },
+          { label: isArabic ? "المجتمعات" : "Communities" }
         ]} />
 
         <PageHeader
-          title="Communities"
-          subtitle="Join or create Tilawah communities for group Quran completion"
+          title={isArabic ? "المجتمعات" : "Communities"}
+          subtitle={isArabic ? "انضم أو أنشئ مجتمعات التلاوة لإتمام القرآن جماعياً" : "Join or create Tilawah communities for group Quran completion"}
           icon={<Users className="w-5 h-5 text-white" />}
           actions={
             user ? (
@@ -85,7 +90,7 @@ export default function Communities() {
                 size="lg"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Create Community
+                {isArabic ? "إنشاء مجتمع" : "Create Community"}
               </Button>
             ) : null
           }
@@ -95,9 +100,19 @@ export default function Communities() {
           <Card className="mb-6 border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
             <CardContent className="pt-6">
               <p className="text-sm text-blue-900 dark:text-blue-100">
-                <a href="/login" className="font-semibold underline">Sign in</a> or{" "}
-                <a href="/signup" className="font-semibold underline">create an account</a>{" "}
-                to join communities and track your progress.
+                {isArabic ? (
+                  <>
+                    <a href="/login" className="font-semibold underline">تسجيل الدخول</a> أو{" "}
+                    <a href="/signup" className="font-semibold underline">إنشاء حساب</a>{" "}
+                    للانضمام إلى المجتمعات وتتبع تقدمك.
+                  </>
+                ) : (
+                  <>
+                    <a href="/login" className="font-semibold underline">Sign in</a> or{" "}
+                    <a href="/signup" className="font-semibold underline">create an account</a>{" "}
+                    to join communities and track your progress.
+                  </>
+                )}
               </p>
             </CardContent>
           </Card>
@@ -105,8 +120,8 @@ export default function Communities() {
 
         <Tabs defaultValue="browse" className="space-y-6">
           <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="browse">Browse All</TabsTrigger>
-            <TabsTrigger value="my-communities" disabled={!user}>My Communities</TabsTrigger>
+            <TabsTrigger value="browse">{isArabic ? "تصفح الكل" : "Browse All"}</TabsTrigger>
+            <TabsTrigger value="my-communities" disabled={!user}>{isArabic ? "مجتمعاتي" : "My Communities"}</TabsTrigger>
           </TabsList>
 
           {/* Browse Communities Tab */}
@@ -136,7 +151,7 @@ export default function Communities() {
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-xs">
                               <Users className="w-3 h-3 mr-1" />
-                              {community.maxMembers} Members
+                              {community.maxMembers} {isArabic ? "أعضاء" : "Members"}
                             </Badge>
                           </div>
                         </div>
@@ -159,7 +174,7 @@ export default function Communities() {
                             disabled
                             data-testid={`button-already-member-${community.id}`}
                           >
-                            Already a Member
+                            {isArabic ? "عضو بالفعل" : "Already a Member"}
                           </Button>
                         ) : (
                           <Button
@@ -169,7 +184,10 @@ export default function Communities() {
                             data-testid={`button-join-${community.id}`}
                           >
                             <UserPlus className="w-4 h-4 mr-2" />
-                            {joinMutation.isPending ? "Joining..." : "Join Community"}
+                            {joinMutation.isPending 
+                              ? (isArabic ? "جاري الانضمام..." : "Joining...") 
+                              : (isArabic ? "انضم للمجتمع" : "Join Community")
+                            }
                           </Button>
                         )
                       )}
@@ -181,12 +199,12 @@ export default function Communities() {
               <Card>
                 <CardContent className="pt-12 pb-12 text-center text-muted-foreground">
                   <Users className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg mb-2">No communities yet</p>
-                  <p className="text-sm mb-4">Be the first to create a Tilawah community!</p>
+                  <p className="text-lg mb-2">{isArabic ? "لا توجد مجتمعات بعد" : "No communities yet"}</p>
+                  <p className="text-sm mb-4">{isArabic ? "كن أول من ينشئ مجتمع التلاوة!" : "Be the first to create a Tilawah community!"}</p>
                   {user && (
                     <Button onClick={() => setLocation("/communities/create")}>
                       <Plus className="w-4 h-4 mr-2" />
-                      Create Community
+                      {isArabic ? "إنشاء مجتمع" : "Create Community"}
                     </Button>
                   )}
                 </CardContent>
@@ -230,14 +248,14 @@ export default function Communities() {
                         <div className="flex items-center gap-2 p-3 bg-accent rounded-lg">
                           <Book className="w-5 h-5 text-emerald-600" />
                           <div>
-                            <p className="text-xs text-muted-foreground">Your Juz</p>
-                            <p className="text-lg font-bold">{community.juzNumber || "N/A"}</p>
+                            <p className="text-xs text-muted-foreground">{isArabic ? "الجزء الخاص بك" : "Your Juz"}</p>
+                            <p className="text-lg font-bold">{community.juzNumber || (isArabic ? "غير محدد" : "N/A")}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 p-3 bg-accent rounded-lg">
                           <Users className="w-5 h-5 text-purple-600" />
                           <div>
-                            <p className="text-xs text-muted-foreground">Members</p>
+                            <p className="text-xs text-muted-foreground">{isArabic ? "الأعضاء" : "Members"}</p>
                             <p className="text-lg font-bold">{community.memberCount}/{community.maxMembers}</p>
                           </div>
                         </div>
@@ -250,8 +268,8 @@ export default function Communities() {
               <Card>
                 <CardContent className="pt-12 pb-12 text-center text-muted-foreground">
                   <Users className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg mb-2">You haven't joined any communities yet</p>
-                  <p className="text-sm">Join a community to start your group Quran recitation journey</p>
+                  <p className="text-lg mb-2">{isArabic ? "لم تنضم لأي مجتمع بعد" : "You haven't joined any communities yet"}</p>
+                  <p className="text-sm">{isArabic ? "انضم لمجتمع لبدء رحلتك الجماعية في تلاوة القرآن" : "Join a community to start your group Quran recitation journey"}</p>
                 </CardContent>
               </Card>
             )}
