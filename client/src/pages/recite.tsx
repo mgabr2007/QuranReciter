@@ -84,17 +84,21 @@ export default function Home() {
 
   // Session tracking mutations
   const createSessionMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       surahId: number;
       surahName: string;
       startAyah: number;
       endAyah: number;
       pauseDuration: number;
-    }) => apiRequest("POST", "/api/sessions", data),
+    }) => {
+      const session = await apiRequest("POST", "/api/sessions", data);
+      return session;
+    },
     onSuccess: (session: any) => {
       setCurrentSessionId(session.id);
       setSessionStartTime(new Date());
       queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions/stats"] });
     },
   });
 
@@ -111,6 +115,7 @@ export default function Home() {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions/stats"] });
     },
   });
 
@@ -149,6 +154,22 @@ export default function Home() {
           lastSurah: selectedSurah,
           lastAyah: ayah.number,
         });
+      }
+    },
+    onPlayStart: async () => {
+      // Create a new session when playback starts (if one doesn't exist)
+      if (!currentSessionId && currentSurah) {
+        try {
+          await createSessionMutation.mutateAsync({
+            surahId: selectedSurah,
+            surahName: currentSurah.name,
+            startAyah: startAyah,
+            endAyah: endAyah,
+            pauseDuration: pauseDuration,
+          });
+        } catch (error) {
+          console.error('Failed to create session:', error);
+        }
       }
     },
     onSurahComplete: () => {

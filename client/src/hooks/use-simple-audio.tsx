@@ -10,6 +10,7 @@ interface UseSimpleAudioProps {
   onAyahChange?: (ayahIndex: number) => void;
   onSessionComplete?: () => void;
   onSurahComplete?: () => void;
+  onPlayStart?: () => void;
 }
 
 interface AudioState {
@@ -34,6 +35,7 @@ export const useSimpleAudio = ({
   onAyahChange,
   onSessionComplete,
   onSurahComplete,
+  onPlayStart,
 }: UseSimpleAudioProps) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -47,6 +49,7 @@ export const useSimpleAudio = ({
   const onAyahChangeRef = useRef(onAyahChange);
   const onSessionCompleteRef = useRef(onSessionComplete);
   const onSurahCompleteRef = useRef(onSurahComplete);
+  const onPlayStartRef = useRef(onPlayStart);
   const ayahsRef = useRef(ayahs);
   const autoRepeatRef = useRef(autoRepeat);
   const autoRepeatAyahRef = useRef(autoRepeatAyah);
@@ -74,11 +77,12 @@ export const useSimpleAudio = ({
     onAyahChangeRef.current = onAyahChange;
     onSessionCompleteRef.current = onSessionComplete;
     onSurahCompleteRef.current = onSurahComplete;
+    onPlayStartRef.current = onPlayStart;
     ayahsRef.current = ayahs;
     autoRepeatRef.current = autoRepeat;
     autoRepeatAyahRef.current = autoRepeatAyah;
     pauseDurationRef.current = pauseDuration;
-  }, [onAyahChange, onSessionComplete, onSurahComplete, ayahs, autoRepeat, autoRepeatAyah, pauseDuration]);
+  }, [onAyahChange, onSessionComplete, onSurahComplete, onPlayStart, ayahs, autoRepeat, autoRepeatAyah, pauseDuration]);
 
   const formatNumber = (num: number, padding: number): string => {
     return num.toString().padStart(padding, '0');
@@ -129,6 +133,8 @@ export const useSimpleAudio = ({
     // Start session timer if not already started
     if (startTimeRef.current === 0) {
       startTimeRef.current = Date.now();
+      // Trigger onPlayStart callback when playback first starts
+      onPlayStartRef.current?.();
     }
     
     // Start session time update interval
