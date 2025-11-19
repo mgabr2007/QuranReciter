@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import { AuthProvider } from "@/hooks/use-auth";
 import { AppLayout } from "@/components/app-layout";
+import { ProtectedRoute } from "@/components/protected-route";
 import Dashboard from "@/pages/dashboard";
 import Recite from "@/pages/recite";
 import History from "@/pages/history";
@@ -23,17 +24,41 @@ function Router() {
   return (
     <AppLayout>
       <Switch>
+        {/* Public routes */}
         <Route path="/" component={Dashboard} />
         <Route path="/recite" component={Recite} />
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
-        <Route path="/history" component={History} />
-        <Route path="/bookmarks" component={Bookmarks} />
-        <Route path="/memorization" component={Memorization} />
         <Route path="/communities" component={Communities} />
-        <Route path="/communities/create" component={CreateCommunity} />
-        <Route path="/my-communities" component={MyCommunities} />
         <Route path="/search" component={Search} />
+        
+        {/* Protected routes */}
+        <Route path="/history">
+          <ProtectedRoute>
+            <History />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/bookmarks">
+          <ProtectedRoute>
+            <Bookmarks />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/memorization">
+          <ProtectedRoute>
+            <Memorization />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/communities/create">
+          <ProtectedRoute>
+            <CreateCommunity />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/my-communities">
+          <ProtectedRoute>
+            <MyCommunities />
+          </ProtectedRoute>
+        </Route>
+        
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
