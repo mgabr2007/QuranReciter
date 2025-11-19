@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { PageLayout } from "@/components/page-layout";
 import { PageHeader } from "@/components/page-header";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { SurahSelector } from "@/components/surah-selector";
 import { PauseSettings } from "@/components/pause-settings";
 import { AudioPlayer } from "@/components/audio-player";
@@ -292,6 +293,13 @@ export default function Home() {
 
   return (
     <>
+      <Breadcrumb 
+        items={[
+          { label: "Dashboard", href: "/" },
+          { label: "Recite Quran" }
+        ]}
+      />
+      
       <PageHeader
         icon={<span className="text-white text-lg font-arabic">ق</span>}
         title={t('appTitle')}
