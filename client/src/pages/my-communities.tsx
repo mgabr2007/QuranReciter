@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Users, Book, Calendar, Edit } from "lucide-react";
 import { PageLayout } from "@/components/page-layout";
 import { PageHeader } from "@/components/page-header";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { useState } from "react";
 
 interface MyCommunity {
@@ -111,11 +112,18 @@ export default function MyCommunities() {
 
   return (
     <PageLayout>
-      <PageHeader
-        title="My Communities"
-        subtitle="Your Tilawah communities and juz assignments"
-        icon={<Users className="w-5 h-5 text-white" />}
-      />
+      <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <Breadcrumb items={[
+          { label: "Home", href: "/" },
+          { label: "Communities", href: "/communities" },
+          { label: "My Communities" }
+        ]} />
+
+        <PageHeader
+          title="My Communities"
+          subtitle="Your Tilawah communities and juz assignments"
+          icon={<Users className="w-5 h-5 text-white" />}
+        />
 
       {isLoading ? (
         <div className="grid gap-6 md:grid-cols-2">
@@ -259,6 +267,7 @@ export default function MyCommunities() {
           </CardContent>
         </Card>
       )}
+      </div>
     </PageLayout>
   );
 }

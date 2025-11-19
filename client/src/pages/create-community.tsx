@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Users } from "lucide-react";
 import { PageLayout } from "@/components/page-layout";
 import { PageHeader } from "@/components/page-header";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 const createCommunitySchema = z.object({
   name: z.string().min(3, "Community name must be at least 3 characters"),
@@ -63,13 +64,20 @@ export default function CreateCommunity() {
 
   return (
     <PageLayout>
-      <PageHeader
-        title="Create Community"
-        subtitle="Start a new Tilawah community for group Quran recitation"
-        icon={<Users className="w-5 h-5 text-white" />}
-      />
+      <div className="container max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <Breadcrumb items={[
+          { label: "Home", href: "/" },
+          { label: "Communities", href: "/communities" },
+          { label: "Create" }
+        ]} />
 
-      <div className="max-w-2xl mx-auto">
+        <PageHeader
+          title="Create Community"
+          subtitle="Start a new Tilawah community for group Quran recitation"
+          icon={<Users className="w-5 h-5 text-white" />}
+        />
+
+        <div className="max-w-2xl mx-auto mt-6">
         <Card>
           <CardHeader>
             <CardTitle>Community Details</CardTitle>
@@ -165,6 +173,7 @@ export default function CreateCommunity() {
             </Form>
           </CardContent>
         </Card>
+        </div>
       </div>
     </PageLayout>
   );
