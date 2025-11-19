@@ -4,6 +4,7 @@ import { Heart, BookOpen, Star, List } from "lucide-react";
 import { PageLayout } from "@/components/page-layout";
 import { PageHeader } from "@/components/page-header";
 import { BackButton } from "@/components/back-button";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { StatCard } from "@/components/stat-card";
 import { Button } from "@/components/ui/button";
 import { BookmarksList } from "@/components/bookmarks-list";
@@ -24,6 +25,13 @@ export default function Bookmarks() {
 
   return (
     <>
+      <Breadcrumb 
+        items={[
+          { label: "Dashboard", href: "/" },
+          { label: "Bookmarks" }
+        ]}
+      />
+      
       <PageHeader
         leftContent={<BackButton variant="ghost" className="text-islamic-green hover:bg-islamic-light" />}
         icon={<Heart className="h-6 w-6 text-white" />}

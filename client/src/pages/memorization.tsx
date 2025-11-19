@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PageLayout } from "@/components/page-layout";
 import { PageHeader } from "@/components/page-header";
 import { BackButton } from "@/components/back-button";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, BookOpen, BarChart3, Trophy, Grid3x3 } from "lucide-react";
@@ -109,6 +110,13 @@ export default function MemorizationPage() {
 
   return (
     <PageLayout>
+      <Breadcrumb 
+        items={[
+          { label: "Dashboard", href: "/" },
+          { label: "Analytics" }
+        ]}
+      />
+      
       <PageHeader
         leftContent={<BackButton label={t('backToHome')} />}
         icon={<BookOpen className="h-6 w-6 text-white" />}

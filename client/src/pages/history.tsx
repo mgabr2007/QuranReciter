@@ -2,11 +2,19 @@ import { History as HistoryIcon } from "lucide-react";
 import { PageLayout } from "@/components/page-layout";
 import { PageHeader } from "@/components/page-header";
 import { BackButton } from "@/components/back-button";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { ListeningHistory } from "@/components/listening-history";
 
 export default function History() {
   return (
     <>
+      <Breadcrumb 
+        items={[
+          { label: "Dashboard", href: "/" },
+          { label: "History" }
+        ]}
+      />
+      
       <PageHeader
         leftContent={
           <>
