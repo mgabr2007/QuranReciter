@@ -6,7 +6,7 @@ import { BackButton } from "@/components/back-button";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, BookOpen, BarChart3, Trophy, Grid3x3 } from "lucide-react";
+import { Calendar, BookOpen, BarChart3, Trophy, Grid3x3, CheckCircle2, Circle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { Surah } from "@shared/schema";
@@ -77,6 +77,13 @@ export default function MemorizationPage() {
     if (count <= 2) return "text-green-800 dark:text-green-200";
     if (count <= 5) return "text-green-900 dark:text-green-100";
     return "text-white dark:text-gray-900";
+  };
+
+  const getMemorizationStatus = (count: number): { status: string; color: string; icon: string } => {
+    if (count === 0) return { status: "Not Started", color: "bg-gray-100 dark:bg-gray-700", icon: "⭕" };
+    if (count <= 2) return { status: "Learning", color: "bg-yellow-100 dark:bg-yellow-700", icon: "📚" };
+    if (count <= 4) return { status: "Memorizing", color: "bg-blue-100 dark:bg-blue-700", icon: "🧠" };
+    return { status: "Memorized", color: "bg-green-100 dark:bg-green-700", icon: "✅" };
   };
 
   const selectedSurah = surahs.find(s => s.id === selectedSurahId);
@@ -335,51 +342,101 @@ export default function MemorizationPage() {
                     {t('showing_progress_for')} <span className="font-semibold">{selectedSurah.name}</span> ({selectedSurah.totalAyahs} {t('ayahs')})
                   </div>
                   
+                  {/* Overall Progress Bar */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Overall Memorization Progress</span>
+                      <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                        {Math.round((surahProgress.filter(p => p.count > 0).length / selectedSurah.totalAyahs) * 100)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                      <div 
+                        className="bg-gradient-to-r from-emerald-400 to-emerald-600 dark:from-emerald-500 dark:to-emerald-400 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${Math.round((surahProgress.filter(p => p.count > 0).length / selectedSurah.totalAyahs) * 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  
                   <div className="flex flex-wrap gap-2">
                     {Array.from({ length: selectedSurah.totalAyahs }, (_, i) => i + 1).map(ayahNum => {
                       const ayahData = surahProgress.find(d => d.ayahNumber === ayahNum);
                       const count = ayahData?.count || 0;
+                      const status = getMemorizationStatus(count);
                       
                       return (
                         <div
                           key={ayahNum}
-                          className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center text-xs font-medium ${getColorForCount(count)} ${getTextColorForCount(count)} cursor-pointer hover:scale-110 transition-transform`}
-                          title={`Ayah ${ayahNum}: ${count} times${ayahData ? `, last: ${ayahData.lastPracticed}` : ''}`}
+                          className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center text-xs font-medium ${getColorForCount(count)} ${getTextColorForCount(count)} cursor-pointer hover:scale-110 transition-transform relative group`}
+                          title={`Ayah ${ayahNum}: ${count} times - ${status.status}${ayahData ? `, last: ${ayahData.lastPracticed}` : ''}`}
                           data-testid={`progress-cell-${ayahNum}`}
                         >
                           <div>{ayahNum}</div>
                           {count > 0 && <div className="text-[10px]">{count}x</div>}
+                          {count === 0 && <div className="text-[10px]">-</div>}
                         </div>
                       );
                     })}
                   </div>
 
-                  <div className="pt-4 border-t">
-                    <h3 className="font-semibold mb-2">{t('statistics')}</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                          {surahProgress.filter(p => p.count > 0).length}
+                  <div className="pt-4 border-t space-y-4">
+                    <div>
+                      <h3 className="font-semibold mb-3">Memorization Breakdown</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                          <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                            {surahProgress.filter(p => p.count >= 5).length}
+                          </div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Memorized (5+)</div>
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{t('ayahs_practiced')}</div>
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                            {surahProgress.filter(p => p.count >= 1 && p.count < 5).length}
+                          </div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Memorizing (1-4)</div>
+                        </div>
+                        <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                          <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                            {surahProgress.filter(p => p.count > 0 && p.count < 1).length}
+                          </div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Learning</div>
+                        </div>
+                        <div className="p-3 bg-gray-50 dark:bg-gray-900/20 rounded-lg">
+                          <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+                            {selectedSurah.totalAyahs - surahProgress.filter(p => p.count > 0).length}
+                          </div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Not Started</div>
+                        </div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                          {Math.round((surahProgress.filter(p => p.count > 0).length / selectedSurah.totalAyahs) * 100)}%
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-semibold mb-3">{t('statistics')}</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                            {surahProgress.filter(p => p.count > 0).length}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">{t('ayahs_practiced')}</div>
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{t('completion')}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                          {Math.max(...surahProgress.map(p => p.count), 0)}
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                            {Math.round((surahProgress.filter(p => p.count > 0).length / selectedSurah.totalAyahs) * 100)}%
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">{t('completion')}</div>
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{t('max_repetitions')}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                          {surahProgress.length > 0 ? Math.round(surahProgress.reduce((sum, p) => sum + p.count, 0) / surahProgress.length) : 0}
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                            {Math.max(...surahProgress.map(p => p.count), 0)}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">{t('max_repetitions')}</div>
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{t('avg_repetitions')}</div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                            {surahProgress.length > 0 ? Math.round(surahProgress.reduce((sum, p) => sum + p.count, 0) / surahProgress.length) : 0}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">{t('avg_repetitions')}</div>
+                        </div>
                       </div>
                     </div>
                   </div>
