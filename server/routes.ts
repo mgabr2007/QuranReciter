@@ -521,6 +521,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/communities/update-progress", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as AuthenticatedRequest).user!.id;
+      const { surahId, ayahNumber } = req.body;
+
+      if (!surahId || !ayahNumber) {
+        return res.status(400).json({ message: "surahId and ayahNumber are required" });
+      }
+
+      await storage.updateWeeklyProgress(userId, surahId, ayahNumber);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error updating weekly progress:', error);
+      res.status(500).json({ message: error.message || "Failed to update weekly progress" });
+    }
+  });
+
   // Get user's juz transfer requests (both sent and received)
   app.get("/api/juz-transfer-requests", requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
