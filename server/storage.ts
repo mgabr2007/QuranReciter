@@ -111,6 +111,7 @@ export interface IStorage {
   respondToJuzTransferRequest(requestId: number, userId: number, accept: boolean): Promise<void>;
   claimAvailableJuz(userId: number, communityId: number, juzNumber: number): Promise<JuzAssignment>;
   getUserJuzAssignments(userId: number, communityId: number): Promise<JuzAssignment[]>;
+  updateWeeklyProgress(userId: number, surahId: number, ayahNumber: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1139,6 +1140,67 @@ export class DatabaseStorage implements IStorage {
       );
 
     return result.map(r => r.assignment);
+  }
+
+  async updateWeeklyProgress(userId: number, surahId: number, ayahNumber: number): Promise<void> {
+    const { getJuzNumber, getTotalAyahsInJuz, getCurrentWeekFridayStart } = await import('@shared/juz-mapping');
+    
+    const juzNumber = getJuzNumber(surahId, ayahNumber);
+    const weekStartDate = getCurrentWeekFridayStart();
+    const totalAyahsInJuz = getTotalAyahsInJuz(juzNumber);
+
+    const assignmentsResult = await db
+      .select({
+        communityMemberId: juzAssignments.communityMemberId,
+        assignmentId: juzAssignments.id,
+      })
+      .from(juzAssignments)
+      .innerJoin(communityMembers, eq(juzAssignments.communityMemberId, communityMembers.id))
+      .where(
+        and(
+          eq(communityMembers.userId, userId),
+          eq(juzAssignments.juzNumber, juzNumber)
+        )
+      );
+
+    for (const assignment of assignmentsResult) {
+      const existing = await db
+        .select()
+        .from(weeklyProgress)
+        .where(
+          and(
+            eq(weeklyProgress.communityMemberId, assignment.communityMemberId),
+            eq(weeklyProgress.juzNumber, juzNumber),
+            eq(weeklyProgress.weekStartDate, weekStartDate)
+          )
+        );
+
+      if (existing.length > 0) {
+        const newCompletedAyahs = existing[0].completedAyahs + 1;
+        const isCompleted = newCompletedAyahs >= totalAyahsInJuz;
+
+        await db
+          .update(weeklyProgress)
+          .set({
+            completedAyahs: newCompletedAyahs,
+            isCompleted,
+            completedAt: isCompleted ? new Date() : null,
+            updatedAt: new Date(),
+          })
+          .where(eq(weeklyProgress.id, existing[0].id));
+      } else {
+        await db
+          .insert(weeklyProgress)
+          .values({
+            communityMemberId: assignment.communityMemberId,
+            juzNumber,
+            weekStartDate,
+            completedAyahs: 1,
+            totalAyahsInJuz,
+            isCompleted: false,
+          });
+      }
+    }
   }
 }
 
