@@ -40,7 +40,7 @@ export const AYAHS_PER_JUZ: { [key: number]: number } = {
   1: 148, 2: 111, 3: 126, 4: 132, 5: 124, 6: 111, 7: 149, 8: 142, 9: 127,
   10: 129, 11: 109, 12: 111, 13: 110, 14: 109, 15: 128, 16: 110, 17: 111,
   18: 105, 19: 113, 20: 127, 21: 112, 22: 78, 23: 118, 24: 119, 25: 77,
-  26: 93, 27: 113, 28: 76, 29: 108, 30: 564
+  26: 93, 27: 113, 28: 76, 29: 108, 30: 527
 };
 
 export function getJuzNumber(surahId: number, ayahNumber: number): number {
@@ -79,7 +79,7 @@ export function getCurrentWeekFridayStart(date: Date = new Date()): string {
   const dayOfWeek = date.getDay();
   const friday = 5;
   
-  let daysToSubtract = dayOfWeek >= friday ? dayOfWeek - friday : dayOfWeek + 2;
+  const daysToSubtract = (dayOfWeek + 2) % 7;
   
   const fridayDate = new Date(date);
   fridayDate.setDate(date.getDate() - daysToSubtract);

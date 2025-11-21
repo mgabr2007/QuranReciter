@@ -1163,43 +1163,30 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
+    if (assignmentsResult.length === 0) {
+      return;
+    }
+
     for (const assignment of assignmentsResult) {
-      const existing = await db
-        .select()
-        .from(weeklyProgress)
-        .where(
-          and(
-            eq(weeklyProgress.communityMemberId, assignment.communityMemberId),
-            eq(weeklyProgress.juzNumber, juzNumber),
-            eq(weeklyProgress.weekStartDate, weekStartDate)
-          )
-        );
-
-      if (existing.length > 0) {
-        const newCompletedAyahs = existing[0].completedAyahs + 1;
-        const isCompleted = newCompletedAyahs >= totalAyahsInJuz;
-
-        await db
-          .update(weeklyProgress)
-          .set({
-            completedAyahs: newCompletedAyahs,
-            isCompleted,
-            completedAt: isCompleted ? new Date() : null,
-            updatedAt: new Date(),
-          })
-          .where(eq(weeklyProgress.id, existing[0].id));
-      } else {
-        await db
-          .insert(weeklyProgress)
-          .values({
-            communityMemberId: assignment.communityMemberId,
-            juzNumber,
-            weekStartDate,
-            completedAyahs: 1,
-            totalAyahsInJuz,
-            isCompleted: false,
-          });
-      }
+      await db
+        .insert(weeklyProgress)
+        .values({
+          communityMemberId: assignment.communityMemberId,
+          juzNumber,
+          weekStartDate,
+          completedAyahs: 1,
+          totalAyahsInJuz,
+          isCompleted: false,
+        })
+        .onConflictDoUpdate({
+          target: [weeklyProgress.communityMemberId, weeklyProgress.juzNumber, weeklyProgress.weekStartDate],
+          set: {
+            completedAyahs: sql`${weeklyProgress.completedAyahs} + 1`,
+            isCompleted: sql`${weeklyProgress.completedAyahs} + 1 >= ${totalAyahsInJuz}`,
+            completedAt: sql`CASE WHEN ${weeklyProgress.completedAyahs} + 1 >= ${totalAyahsInJuz} THEN NOW() ELSE ${weeklyProgress.completedAt} END`,
+            updatedAt: sql`NOW()`,
+          },
+        });
     }
   }
 }

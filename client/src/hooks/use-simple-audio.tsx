@@ -310,8 +310,10 @@ export const useSimpleAudio = ({
             surahId: currentAyah.surahId,
             ayahNumber: currentAyah.number
           }).then(() => {
-            // Invalidate community details queries so progress updates in real-time
+            // Invalidate community and dashboard queries so progress updates in real-time
             queryClient.invalidateQueries({ queryKey: ['/api/communities'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/sessions'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/my-communities'] });
           }).catch(error => {
             console.error('Failed to update weekly progress:', error);
           });

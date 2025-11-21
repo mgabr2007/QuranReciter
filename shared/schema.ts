@@ -288,6 +288,7 @@ export const weeklyProgress = pgTable("weekly_progress", {
 }, (table) => ({
   memberWeekIdx: index("member_week_idx").on(table.communityMemberId, table.weekStartDate),
   weekJuzIdx: index("week_juz_idx").on(table.weekStartDate, table.juzNumber),
+  uniqueWeeklyProgress: uniqueIndex("unique_weekly_progress_idx").on(table.communityMemberId, table.juzNumber, table.weekStartDate),
 }));
 
 // Juz transfer requests table
