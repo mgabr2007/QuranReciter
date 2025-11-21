@@ -312,8 +312,15 @@ export const useSimpleAudio = ({
           }).then(() => {
             // Invalidate community and dashboard queries so progress updates in real-time
             queryClient.invalidateQueries({ queryKey: ['/api/communities'] });
-            queryClient.invalidateQueries({ queryKey: ['/api/sessions'] });
             queryClient.invalidateQueries({ queryKey: ['/api/my-communities'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/sessions'] });
+            // Invalidate all community detail pages to update progress percentages
+            queryClient.invalidateQueries({ 
+              predicate: (query) => {
+                const key = query.queryKey[0];
+                return typeof key === 'string' && key.includes('/api/communities/') && key.includes('/details');
+              }
+            });
           }).catch(error => {
             console.error('Failed to update weekly progress:', error);
           });
