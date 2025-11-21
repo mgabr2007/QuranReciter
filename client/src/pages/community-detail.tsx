@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { PageLayout } from "@/components/page-layout";
 import { PageHeader } from "@/components/page-header";
@@ -6,8 +6,20 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Loader2, Users, BookOpen, CheckCircle2, Clock, Circle } from "lucide-react";
+import { useState } from "react";
 
 interface JuzData {
   juzNumber: number;
@@ -30,11 +42,92 @@ interface CommunityDetails {
 export default function CommunityDetail() {
   const { id } = useParams<{ id: string }>();
   const { language } = useLanguage();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const isRTL = language === 'ar';
+  const [claimDialogOpen, setClaimDialogOpen] = useState(false);
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+  const [selectedJuz, setSelectedJuz] = useState<JuzData | null>(null);
 
   const { data, isLoading, error } = useQuery<CommunityDetails>({
     queryKey: ['/api/communities', id, 'details'],
   });
+
+  const claimMutation = useMutation({
+    mutationFn: async (juzNumber: number) => {
+      return await apiRequest('POST', `/api/communities/${id}/claim-juz`, { juzNumber });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/communities', id, 'details'] });
+      toast({
+        title: language === 'ar' ? 'تم المطالبة بالجزء' : 'Juz Claimed',
+        description: language === 'ar' 
+          ? `تم تخصيص الجزء ${selectedJuz?.juzNumber} لك بنجاح`
+          : `Juz ${selectedJuz?.juzNumber} has been assigned to you`,
+      });
+      setClaimDialogOpen(false);
+      setSelectedJuz(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: 'destructive',
+        title: language === 'ar' ? 'فشلت المطالبة' : 'Claim Failed',
+        description: error.message,
+      });
+    },
+  });
+
+  const requestMutation = useMutation({
+    mutationFn: async ({ juzNumber, fromMemberId }: { juzNumber: number; fromMemberId: number }) => {
+      return await apiRequest('POST', `/api/communities/${id}/juz-transfer-request`, {
+        juzNumber,
+        fromMemberId,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: language === 'ar' ? 'تم إرسال الطلب' : 'Request Sent',
+        description: language === 'ar'
+          ? `تم إرسال طلبك للجزء ${selectedJuz?.juzNumber} إلى ${selectedJuz?.member?.username}`
+          : `Your request for Juz ${selectedJuz?.juzNumber} has been sent to ${selectedJuz?.member?.username}`,
+      });
+      setRequestDialogOpen(false);
+      setSelectedJuz(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: 'destructive',
+        title: language === 'ar' ? 'فشل الطلب' : 'Request Failed',
+        description: error.message,
+      });
+    },
+  });
+
+  const handleClaimJuz = (juz: JuzData) => {
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: language === 'ar' ? 'تسجيل الدخول مطلوب' : 'Login Required',
+        description: language === 'ar' ? 'يجب تسجيل الدخول للمطالبة بالجزء' : 'Please login to claim a juz',
+      });
+      return;
+    }
+    setSelectedJuz(juz);
+    setClaimDialogOpen(true);
+  };
+
+  const handleRequestJuz = (juz: JuzData) => {
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: language === 'ar' ? 'تسجيل الدخول مطلوب' : 'Login Required',
+        description: language === 'ar' ? 'يجب تسجيل الدخول لطلب الجزء' : 'Please login to request a juz',
+      });
+      return;
+    }
+    setSelectedJuz(juz);
+    setRequestDialogOpen(true);
+  };
 
   const getStatusColor = (status: JuzData['status']) => {
     switch (status) {
@@ -264,6 +357,7 @@ export default function CommunityDetail() {
                     size="sm"
                     variant="outline"
                     className="w-full text-xs"
+                    onClick={() => handleClaimJuz(juz)}
                     data-testid={`claim-juz-${juz.juzNumber}`}
                   >
                     {language === 'ar' ? 'المطالبة' : 'Claim'}
@@ -275,6 +369,7 @@ export default function CommunityDetail() {
                     size="sm"
                     variant="ghost"
                     className="w-full text-xs"
+                    onClick={() => handleRequestJuz(juz)}
                     data-testid={`request-juz-${juz.juzNumber}`}
                   >
                     {language === 'ar' ? 'طلب' : 'Request'}
@@ -285,6 +380,80 @@ export default function CommunityDetail() {
           </Card>
         ))}
       </div>
+
+      {/* Claim Juz Dialog */}
+      <Dialog open={claimDialogOpen} onOpenChange={setClaimDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {language === 'ar' ? 'المطالبة بالجزء' : 'Claim Juz'}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'ar'
+                ? `هل أنت متأكد أنك تريد المطالبة بالجزء ${selectedJuz?.juzNumber}؟ سيتم تعيينه لك ويمكنك البدء في التلاوة.`
+                : `Are you sure you want to claim Juz ${selectedJuz?.juzNumber}? It will be assigned to you and you can start recitation.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setClaimDialogOpen(false)}
+              data-testid="button-cancel-claim"
+            >
+              {language === 'ar' ? 'إلغاء' : 'Cancel'}
+            </Button>
+            <Button
+              onClick={() => selectedJuz && claimMutation.mutate(selectedJuz.juzNumber)}
+              disabled={claimMutation.isPending}
+              data-testid="button-confirm-claim"
+            >
+              {claimMutation.isPending
+                ? (language === 'ar' ? 'جاري المطالبة...' : 'Claiming...')
+                : (language === 'ar' ? 'تأكيد' : 'Confirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Request Juz Dialog */}
+      <Dialog open={requestDialogOpen} onOpenChange={setRequestDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {language === 'ar' ? 'طلب الجزء' : 'Request Juz'}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'ar'
+                ? `هل تريد طلب الجزء ${selectedJuz?.juzNumber} من ${selectedJuz?.member?.username}؟ سيتم إخطارهم بطلبك ويمكنهم قبوله أو رفضه.`
+                : `Do you want to request Juz ${selectedJuz?.juzNumber} from ${selectedJuz?.member?.username}? They will be notified and can accept or decline your request.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRequestDialogOpen(false)}
+              data-testid="button-cancel-request"
+            >
+              {language === 'ar' ? 'إلغاء' : 'Cancel'}
+            </Button>
+            <Button
+              onClick={() =>
+                selectedJuz?.member &&
+                requestMutation.mutate({
+                  juzNumber: selectedJuz.juzNumber,
+                  fromMemberId: selectedJuz.member.id,
+                })
+              }
+              disabled={requestMutation.isPending}
+              data-testid="button-confirm-request"
+            >
+              {requestMutation.isPending
+                ? (language === 'ar' ? 'جاري الإرسال...' : 'Sending...')
+                : (language === 'ar' ? 'إرسال الطلب' : 'Send Request')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageLayout>
   );
 }

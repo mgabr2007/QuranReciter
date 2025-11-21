@@ -3,11 +3,12 @@ import { createServer, type Server } from "http";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { storage } from "./storage";
-import { insertUserPreferencesSchema, insertRecitationSessionSchema, insertBookmarkedAyahSchema, insertCommunitySchema } from "@shared/schema";
+import { insertUserPreferencesSchema, insertRecitationSessionSchema, insertBookmarkedAyahSchema, insertCommunitySchema, communityMembers } from "@shared/schema";
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { signup, login, logout, getCurrentUser, requireAuth, type AuthenticatedRequest } from "./auth";
 import { db, pool } from "./db";
+import { and, eq } from "drizzle-orm";
 
 const PgSession = connectPgSimple(session);
 
@@ -447,8 +448,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid juz number" });
       }
 
-      const [member] = await storage.getUserCommunities(userId);
-      if (!member) {
+      // Get the user's community member ID
+      const members = await db
+        .select({ id: communityMembers.id })
+        .from(communityMembers)
+        .where(
+          and(
+            eq(communityMembers.userId, userId),
+            eq(communityMembers.communityId, communityId)
+          )
+        );
+
+      if (members.length === 0) {
         return res.status(400).json({ message: "User not a member of community" });
       }
 
@@ -456,7 +467,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         communityId,
         juzNumber,
         fromMemberId || null,
-        member.id
+        members[0].id
       );
 
       res.json(request);
