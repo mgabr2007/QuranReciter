@@ -74,3 +74,20 @@ export function getTotalAyahsInJuz(juzNumber: number): number {
   }
   return AYAHS_PER_JUZ[juzNumber];
 }
+
+export function getCurrentWeekFridayStart(date: Date = new Date()): string {
+  const dayOfWeek = date.getDay();
+  const friday = 5;
+  
+  let daysToSubtract = dayOfWeek >= friday ? dayOfWeek - friday : dayOfWeek + 2;
+  
+  const fridayDate = new Date(date);
+  fridayDate.setDate(date.getDate() - daysToSubtract);
+  fridayDate.setHours(0, 0, 0, 0);
+  
+  const year = fridayDate.getFullYear();
+  const month = String(fridayDate.getMonth() + 1).padStart(2, '0');
+  const day = String(fridayDate.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+}
