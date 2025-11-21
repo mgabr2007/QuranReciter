@@ -304,6 +304,17 @@ export const useSimpleAudio = ({
           }).catch(error => {
             console.error('Failed to log practice:', error);
           });
+
+          // Update weekly progress for community juz tracking
+          apiRequest('POST', '/api/communities/update-progress', {
+            surahId: currentAyah.surahId,
+            ayahNumber: currentAyah.number
+          }).then(() => {
+            // Invalidate community details queries so progress updates in real-time
+            queryClient.invalidateQueries({ queryKey: ['/api/communities'] });
+          }).catch(error => {
+            console.error('Failed to update weekly progress:', error);
+          });
         }
         
         // If pauseDuration is 0 (no pause mode), skip pause entirely and advance immediately
