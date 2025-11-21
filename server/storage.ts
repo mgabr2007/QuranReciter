@@ -107,7 +107,7 @@ export interface IStorage {
     }>;
   }>;
   createJuzTransferRequest(communityId: number, juzNumber: number, fromMemberId: number | null, toMemberId: number): Promise<JuzTransferRequest>;
-  getUserJuzTransferRequests(userId: number): Promise<Array<JuzTransferRequest & { communityName: string; toUsername: string; fromUsername?: string }>>;
+  getUserJuzTransferRequests(userId: number): Promise<Array<JuzTransferRequest & { communityName: string; toUsername: string; fromUsername: string; type: 'received' | 'sent'; fromMemberUsername: string; toMemberUsername: string }>>;
   respondToJuzTransferRequest(requestId: number, userId: number, accept: boolean): Promise<void>;
   claimAvailableJuz(userId: number, communityId: number, juzNumber: number): Promise<JuzAssignment>;
   getUserJuzAssignments(userId: number, communityId: number): Promise<JuzAssignment[]>;
@@ -944,7 +944,7 @@ export class DatabaseStorage implements IStorage {
     return request;
   }
 
-  async getUserJuzTransferRequests(userId: number): Promise<Array<JuzTransferRequest & { communityName: string; toUsername: string; fromUsername?: string }>> {
+  async getUserJuzTransferRequests(userId: number): Promise<Array<JuzTransferRequest & { communityName: string; toUsername: string; fromUsername: string; type: 'received' | 'sent' }>> {
     const member = await db
       .select({ id: communityMembers.id })
       .from(communityMembers)
@@ -976,17 +976,23 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(communityMembers, eq(juzTransferRequests.toMemberId, communityMembers.id))
       .innerJoin(users, eq(communityMembers.userId, users.id))
       .where(
-        and(
-          eq(juzTransferRequests.status, 'pending'),
-          sql`${juzTransferRequests.fromMemberId} IN (${sql.join(memberIds, sql`, `)})`
+        or(
+          sql`${juzTransferRequests.fromMemberId} IN (${sql.join(memberIds, sql`, `)})`,
+          sql`${juzTransferRequests.toMemberId} IN (${sql.join(memberIds, sql`, `)})`
         )
-      );
+      )
+      .orderBy(desc(juzTransferRequests.createdAt));
 
     return requests.map(r => ({
       ...r.request,
       communityName: r.communityName,
       toUsername: r.toUser.username,
-      fromUsername: r.fromUser?.username,
+      fromUsername: r.fromUser?.username || 'Unknown',
+      fromMemberUsername: r.fromUser?.username || 'Unknown',
+      toMemberUsername: r.toUser.username,
+      // "received" = current user is fromMemberId (being asked to transfer their juz)
+      // "sent" = current user is toMemberId (requesting a juz from someone else)
+      type: r.request.fromMemberId && memberIds.includes(r.request.fromMemberId) ? 'received' as const : 'sent' as const,
     }));
   }
 
@@ -995,25 +1001,26 @@ export class DatabaseStorage implements IStorage {
       const [request] = await tx
         .select({
           request: juzTransferRequests,
-          fromMemberId: communityMembers.id,
         })
         .from(juzTransferRequests)
-        .leftJoin(communityMembers, eq(juzTransferRequests.fromMemberId, communityMembers.id))
         .where(eq(juzTransferRequests.id, requestId));
 
       if (!request) {
         throw new Error("Transfer request not found");
       }
 
-      if (request.fromMemberId) {
+      // Verify that the user is the fromMemberId (the one being asked to transfer)
+      if (request.request.fromMemberId) {
         const [fromMember] = await tx
           .select({ userId: communityMembers.userId })
           .from(communityMembers)
-          .where(eq(communityMembers.id, request.fromMemberId));
+          .where(eq(communityMembers.id, request.request.fromMemberId));
 
         if (!fromMember || fromMember.userId !== userId) {
           throw new Error("Unauthorized to respond to this request");
         }
+      } else {
+        throw new Error("Invalid transfer request: no fromMemberId");
       }
 
       if (accept) {

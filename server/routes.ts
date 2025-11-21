@@ -438,6 +438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create juz transfer request (for requesting from another member)
   app.post("/api/communities/:id/juz-transfer-request", requireAuth, async (req, res) => {
     try {
       const userId = (req as AuthenticatedRequest).user!.id;
@@ -446,6 +447,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!juzNumber || juzNumber < 1 || juzNumber > 30) {
         return res.status(400).json({ message: "Invalid juz number" });
+      }
+
+      if (!fromMemberId) {
+        return res.status(400).json({ message: "fromMemberId is required for transfer requests" });
       }
 
       // Get the user's community member ID
@@ -466,7 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const request = await storage.createJuzTransferRequest(
         communityId,
         juzNumber,
-        fromMemberId || null,
+        fromMemberId,
         members[0].id
       );
 
@@ -476,20 +481,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/juz-transfer-requests/:id/respond", requireAuth, async (req, res) => {
+  // Respond to juz transfer request
+  app.patch("/api/juz-transfer-requests/:requestId", requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = (req as AuthenticatedRequest).user!.id;
-      const requestId = parseInt(req.params.id);
-      const { accept } = req.body;
+      const { requestId } = req.params;
+      const { action } = req.body;
 
-      if (typeof accept !== 'boolean') {
-        return res.status(400).json({ message: "Accept parameter must be a boolean" });
+      if (!action || !['accept', 'decline'].includes(action)) {
+        return res.status(400).json({ message: "Invalid action. Must be 'accept' or 'decline'" });
       }
 
-      await storage.respondToJuzTransferRequest(requestId, userId, accept);
+      await storage.respondToJuzTransferRequest(
+        parseInt(requestId),
+        req.user!.id,
+        action === 'accept'
+      );
+
       res.json({ success: true });
     } catch (error: any) {
-      res.status(400).json({ message: error.message || "Failed to respond to transfer request" });
+      console.error('Error responding to juz transfer request:', error);
+      res.status(500).json({ message: error.message || "Failed to respond to transfer request" });
     }
   });
 
@@ -510,13 +521,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/user/juz-transfer-requests", requireAuth, async (req, res) => {
+  // Get user's juz transfer requests (both sent and received)
+  app.get("/api/juz-transfer-requests", requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = (req as AuthenticatedRequest).user!.id;
-      const requests = await storage.getUserJuzTransferRequests(userId);
+      const requests = await storage.getUserJuzTransferRequests(req.user!.id);
       res.json(requests);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch transfer requests" });
+    } catch (error: any) {
+      console.error('Error fetching juz transfer requests:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch transfer requests" });
     }
   });
 

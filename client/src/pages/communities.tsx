@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Plus, UserPlus, Book, Calendar, TrendingUp } from "lucide-react";
+import { Users, Plus, UserPlus, Book, Calendar, TrendingUp, Bell, Check, X, Send, Inbox } from "lucide-react";
 import { PageLayout } from "@/components/page-layout";
 import { PageHeader } from "@/components/page-header";
 import { Breadcrumb } from "@/components/breadcrumb";
@@ -27,6 +27,18 @@ interface MyCommunity extends Community {
   juzNumber: number | null;
 }
 
+interface TransferRequest {
+  id: number;
+  communityId: number;
+  communityName: string;
+  juzNumber: number;
+  fromMemberUsername: string;
+  toMemberUsername: string;
+  status: 'pending' | 'accepted' | 'declined';
+  createdAt: string;
+  type: 'received' | 'sent';
+}
+
 export default function Communities() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -41,6 +53,35 @@ export default function Communities() {
   const { data: myCommunities, isLoading: myCommunitiesLoading } = useQuery<MyCommunity[]>({
     queryKey: ["/api/my-communities"],
     enabled: !!user,
+  });
+
+  const { data: transferRequests, isLoading: requestsLoading } = useQuery<TransferRequest[]>({
+    queryKey: ["/api/juz-transfer-requests"],
+    enabled: !!user,
+  });
+
+  const respondToRequestMutation = useMutation({
+    mutationFn: async ({ requestId, action }: { requestId: number; action: 'accept' | 'decline' }) => {
+      return await apiRequest("PATCH", `/api/juz-transfer-requests/${requestId}`, { action });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/juz-transfer-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-communities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/communities"] });
+      toast({
+        title: isArabic ? "نجح!" : "Success!",
+        description: isArabic 
+          ? variables.action === 'accept' ? 'تم قبول الطلب' : 'تم رفض الطلب'
+          : variables.action === 'accept' ? 'Request accepted' : 'Request declined',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: isArabic ? "خطأ" : "Error",
+        description: error.message,
+      });
+    },
   });
 
   const joinMutation = useMutation({
@@ -119,9 +160,17 @@ export default function Communities() {
         )}
 
         <Tabs defaultValue="browse" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3">
             <TabsTrigger value="browse">{isArabic ? "تصفح الكل" : "Browse All"}</TabsTrigger>
             <TabsTrigger value="my-communities" disabled={!user}>{isArabic ? "مجتمعاتي" : "My Communities"}</TabsTrigger>
+            <TabsTrigger value="requests" disabled={!user} className="relative">
+              {isArabic ? "الطلبات" : "My Requests"}
+              {transferRequests && transferRequests.filter(r => r.type === 'received' && r.status === 'pending').length > 0 && (
+                <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {transferRequests.filter(r => r.type === 'received' && r.status === 'pending').length}
+                </Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           {/* Browse Communities Tab */}
@@ -274,6 +323,139 @@ export default function Communities() {
                   <p className="text-sm">{isArabic ? "انضم لمجتمع لبدء رحلتك الجماعية في تلاوة القرآن" : "Join a community to start your group Quran recitation journey"}</p>
                 </CardContent>
               </Card>
+            )}
+          </TabsContent>
+
+          {/* My Requests Tab */}
+          <TabsContent value="requests">
+            {requestsLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin">⏳</div>
+              </div>
+            ) : !transferRequests || transferRequests.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Bell className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-gray-500 dark:text-gray-400">
+                    {isArabic ? "لا توجد طلبات نقل" : "No transfer requests"}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-6">
+                {/* Received Requests */}
+                {transferRequests.filter(r => r.type === 'received').length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Inbox className="w-5 h-5" />
+                      {isArabic ? "الطلبات الواردة" : "Received Requests"}
+                    </h3>
+                    <div className="grid gap-4">
+                      {transferRequests
+                        .filter(r => r.type === 'received')
+                        .map((request) => (
+                          <Card key={request.id}>
+                            <CardHeader>
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <CardTitle className="text-base">
+                                    {isArabic 
+                                      ? `طلب نقل الجزء ${request.juzNumber}`
+                                      : `Juz ${request.juzNumber} Transfer Request`}
+                                  </CardTitle>
+                                  <CardDescription>
+                                    {isArabic
+                                      ? `من ${request.fromMemberUsername} في ${request.communityName}`
+                                      : `From ${request.fromMemberUsername} in ${request.communityName}`}
+                                  </CardDescription>
+                                </div>
+                                <Badge
+                                  variant={
+                                    request.status === 'accepted' ? 'default' :
+                                    request.status === 'declined' ? 'destructive' :
+                                    'secondary'
+                                  }
+                                >
+                                  {request.status === 'accepted' && (isArabic ? 'مقبول' : 'Accepted')}
+                                  {request.status === 'declined' && (isArabic ? 'مرفوض' : 'Declined')}
+                                  {request.status === 'pending' && (isArabic ? 'قيد الانتظار' : 'Pending')}
+                                </Badge>
+                              </div>
+                            </CardHeader>
+                            {request.status === 'pending' && (
+                              <CardFooter className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => respondToRequestMutation.mutate({ requestId: request.id, action: 'accept' })}
+                                  disabled={respondToRequestMutation.isPending}
+                                  data-testid={`button-accept-${request.id}`}
+                                >
+                                  <Check className="w-4 h-4 mr-1" />
+                                  {isArabic ? 'قبول' : 'Accept'}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => respondToRequestMutation.mutate({ requestId: request.id, action: 'decline' })}
+                                  disabled={respondToRequestMutation.isPending}
+                                  data-testid={`button-decline-${request.id}`}
+                                >
+                                  <X className="w-4 h-4 mr-1" />
+                                  {isArabic ? 'رفض' : 'Decline'}
+                                </Button>
+                              </CardFooter>
+                            )}
+                          </Card>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Sent Requests */}
+                {transferRequests.filter(r => r.type === 'sent').length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Send className="w-5 h-5" />
+                      {isArabic ? "الطلبات المرسلة" : "Sent Requests"}
+                    </h3>
+                    <div className="grid gap-4">
+                      {transferRequests
+                        .filter(r => r.type === 'sent')
+                        .map((request) => (
+                          <Card key={request.id}>
+                            <CardHeader>
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <CardTitle className="text-base">
+                                    {isArabic 
+                                      ? `طلب الجزء ${request.juzNumber}`
+                                      : `Request for Juz ${request.juzNumber}`}
+                                  </CardTitle>
+                                  <CardDescription>
+                                    {isArabic
+                                      ? `إلى ${request.toMemberUsername} في ${request.communityName}`
+                                      : `To ${request.toMemberUsername} in ${request.communityName}`}
+                                  </CardDescription>
+                                </div>
+                                <Badge
+                                  variant={
+                                    request.status === 'accepted' ? 'default' :
+                                    request.status === 'declined' ? 'destructive' :
+                                    'secondary'
+                                  }
+                                >
+                                  {request.status === 'accepted' && (isArabic ? 'مقبول' : 'Accepted')}
+                                  {request.status === 'declined' && (isArabic ? 'مرفوض' : 'Declined')}
+                                  {request.status === 'pending' && (isArabic ? 'قيد الانتظار' : 'Pending')}
+                                </Badge>
+                              </div>
+                            </CardHeader>
+                          </Card>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </TabsContent>
         </Tabs>
