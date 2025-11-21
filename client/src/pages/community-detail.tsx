@@ -274,7 +274,7 @@ export default function CommunityDetail() {
         subtitle={community.description || (language === 'ar' ? 'تتبع تقدم جميع الأعضاء في هذه المجموعة' : 'Track progress of all members in this community')}
         icon={<Users className="w-5 h-5 text-white" />}
         maxWidth="7xl"
-        action={
+        actions={
           <Button 
             onClick={handleShare}
             variant="outline"
