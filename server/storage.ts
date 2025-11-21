@@ -87,7 +87,7 @@ export interface IStorage {
   
   createCommunity(community: InsertCommunity): Promise<Community>;
   getCommunities(): Promise<Community[]>;
-  getCommunity(id: number): Promise<Community | undefined>;
+  getCommunity(id: number): Promise<(Community & { memberCount: number }) | undefined>;
   getUserCommunities(userId: number): Promise<Array<Community & { memberCount: number; juzNumber: number | null }>>;
   joinCommunity(userId: number, communityId: number): Promise<{ member: CommunityMember; assignment: JuzAssignment }>;
   getAvailableJuz(communityId: number): Promise<number[]>;
@@ -627,12 +627,25 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(communities);
   }
 
-  async getCommunity(id: number): Promise<Community | undefined> {
+  async getCommunity(id: number): Promise<(Community & { memberCount: number }) | undefined> {
     const [community] = await db
       .select()
       .from(communities)
       .where(eq(communities.id, id));
-    return community || undefined;
+    
+    if (!community) {
+      return undefined;
+    }
+
+    const members = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(communityMembers)
+      .where(eq(communityMembers.communityId, id));
+
+    return {
+      ...community,
+      memberCount: members[0]?.count || 0
+    };
   }
 
   async getUserCommunities(userId: number): Promise<Array<Community & { memberCount: number; juzNumber: number | null }>> {

@@ -18,7 +18,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Loader2, Users, BookOpen, CheckCircle2, Clock, Circle } from "lucide-react";
+import { Loader2, Users, BookOpen, CheckCircle2, Clock, Circle, Share2, Copy, Check } from "lucide-react";
 import { useState } from "react";
 
 interface JuzData {
@@ -48,9 +48,11 @@ export default function CommunityDetail() {
   const [claimDialogOpen, setClaimDialogOpen] = useState(false);
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
   const [selectedJuz, setSelectedJuz] = useState<JuzData | null>(null);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const { data, isLoading, error } = useQuery<CommunityDetails>({
-    queryKey: ['/api/communities', id, 'details'],
+    queryKey: [`/api/communities/${id}/details`],
   });
 
   const claimMutation = useMutation({
@@ -58,7 +60,7 @@ export default function CommunityDetail() {
       return await apiRequest('POST', `/api/communities/${id}/claim-juz`, { juzNumber });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/communities', id, 'details'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${id}/details`] });
       toast({
         title: language === 'ar' ? 'تم المطالبة بالجزء' : 'Juz Claimed',
         description: language === 'ar' 
@@ -127,6 +129,50 @@ export default function CommunityDetail() {
     }
     setSelectedJuz(juz);
     setRequestDialogOpen(true);
+  };
+
+  const getInviteUrl = () => {
+    return `${window.location.origin}/join-community/${id}`;
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(getInviteUrl());
+      setCopied(true);
+      toast({
+        title: language === 'ar' ? 'تم النسخ!' : 'Copied!',
+        description: language === 'ar' ? 'تم نسخ رابط الدعوة إلى الحافظة' : 'Invite link copied to clipboard',
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: language === 'ar' ? 'فشل النسخ' : 'Copy Failed',
+        description: language === 'ar' ? 'فشل نسخ الرابط' : 'Failed to copy link',
+      });
+    }
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: community?.name || (language === 'ar' ? 'انضم إلى مجموعتنا' : 'Join Our Community'),
+      text: language === 'ar' 
+        ? `انضم إلي في تلاوة القرآن الكريم - ${community?.name}`
+        : `Join me in reciting the Quran - ${community?.name}`,
+      url: getInviteUrl(),
+    };
+
+    if (navigator.share && /mobile/i.test(navigator.userAgent)) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          handleCopyLink();
+        }
+      }
+    } else {
+      setShareDialogOpen(true);
+    }
   };
 
   const getStatusColor = (status: JuzData['status']) => {
@@ -228,6 +274,16 @@ export default function CommunityDetail() {
         subtitle={community.description || (language === 'ar' ? 'تتبع تقدم جميع الأعضاء في هذه المجموعة' : 'Track progress of all members in this community')}
         icon={<Users className="w-5 h-5 text-white" />}
         maxWidth="7xl"
+        action={
+          <Button 
+            onClick={handleShare}
+            variant="outline"
+            data-testid="button-share-community"
+          >
+            <Share2 className="h-4 w-4 mr-2" />
+            {language === 'ar' ? 'مشاركة' : 'Share'}
+          </Button>
+        }
       />
 
       {/* Stats Overview */}
@@ -464,6 +520,54 @@ export default function CommunityDetail() {
               {requestMutation.isPending
                 ? (language === 'ar' ? 'جاري الإرسال...' : 'Sending...')
                 : (language === 'ar' ? 'إرسال الطلب' : 'Send Request')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Community Dialog */}
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {language === 'ar' ? 'مشاركة المجموعة' : 'Share Community'}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'ar'
+                ? 'شارك هذا الرابط مع الأشخاص الذين تريد دعوتهم للانضمام إلى المجموعة'
+                : 'Share this link with people you want to invite to join the community'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                readOnly
+                value={getInviteUrl()}
+                className="flex-1 px-3 py-2 border rounded-md bg-muted text-sm"
+                data-testid="input-invite-link"
+              />
+              <Button
+                onClick={handleCopyLink}
+                variant="outline"
+                size="icon"
+                data-testid="button-copy-link"
+              >
+                {copied ? (
+                  <Check className="h-4 w-4 text-green-600" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShareDialogOpen(false)}
+              data-testid="button-close-share"
+            >
+              {language === 'ar' ? 'إغلاق' : 'Close'}
             </Button>
           </DialogFooter>
         </DialogContent>
