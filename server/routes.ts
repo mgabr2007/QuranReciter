@@ -427,6 +427,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/communities/:id/details", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.id);
+      const details = await storage.getCommunityDetails(communityId);
+      res.json(details);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message || "Failed to fetch community details" });
+    }
+  });
+
+  app.post("/api/communities/:id/juz-transfer-request", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as AuthenticatedRequest).user!.id;
+      const communityId = parseInt(req.params.id);
+      const { juzNumber, fromMemberId } = req.body;
+
+      if (!juzNumber || juzNumber < 1 || juzNumber > 30) {
+        return res.status(400).json({ message: "Invalid juz number" });
+      }
+
+      const [member] = await storage.getUserCommunities(userId);
+      if (!member) {
+        return res.status(400).json({ message: "User not a member of community" });
+      }
+
+      const request = await storage.createJuzTransferRequest(
+        communityId,
+        juzNumber,
+        fromMemberId || null,
+        member.id
+      );
+
+      res.json(request);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || "Failed to create transfer request" });
+    }
+  });
+
+  app.patch("/api/juz-transfer-requests/:id/respond", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as AuthenticatedRequest).user!.id;
+      const requestId = parseInt(req.params.id);
+      const { accept } = req.body;
+
+      if (typeof accept !== 'boolean') {
+        return res.status(400).json({ message: "Accept parameter must be a boolean" });
+      }
+
+      await storage.respondToJuzTransferRequest(requestId, userId, accept);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || "Failed to respond to transfer request" });
+    }
+  });
+
+  app.post("/api/communities/:id/claim-juz", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as AuthenticatedRequest).user!.id;
+      const communityId = parseInt(req.params.id);
+      const { juzNumber } = req.body;
+
+      if (!juzNumber || juzNumber < 1 || juzNumber > 30) {
+        return res.status(400).json({ message: "Invalid juz number" });
+      }
+
+      const assignment = await storage.claimAvailableJuz(userId, communityId, juzNumber);
+      res.json(assignment);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || "Failed to claim juz" });
+    }
+  });
+
+  app.get("/api/user/juz-transfer-requests", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as AuthenticatedRequest).user!.id;
+      const requests = await storage.getUserJuzTransferRequests(userId);
+      res.json(requests);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch transfer requests" });
+    }
+  });
+
+  app.get("/api/user/juz-assignments/:communityId", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as AuthenticatedRequest).user!.id;
+      const communityId = parseInt(req.params.communityId);
+      const assignments = await storage.getUserJuzAssignments(userId, communityId);
+      res.json(assignments);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user juz assignments" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
