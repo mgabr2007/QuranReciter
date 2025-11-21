@@ -195,6 +195,20 @@ export default function CommunityDetail() {
   }
 
   const { community, juzData } = data;
+  
+  // Safety check for juzData
+  if (!juzData || !Array.isArray(juzData)) {
+    return (
+      <PageLayout maxWidth="7xl">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">
+            {language === 'ar' ? 'بيانات الأجزاء غير متوفرة' : 'Juz data not available'}
+          </p>
+        </div>
+      </PageLayout>
+    );
+  }
+  
   const assignedJuz = juzData.filter(j => j.member !== null).length;
   const completedJuz = juzData.filter(j => j.status === 'completed').length;
   const availableJuz = juzData.filter(j => j.status === 'available').length;

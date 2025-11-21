@@ -38,7 +38,7 @@ import {
   type InsertJuzTransferRequest
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql, notInArray } from "drizzle-orm";
+import { eq, desc, and, or, sql, notInArray } from "drizzle-orm";
 
 export interface IStorage {
   getUserById(id: number): Promise<User | undefined>;
@@ -944,7 +944,7 @@ export class DatabaseStorage implements IStorage {
     return request;
   }
 
-  async getUserJuzTransferRequests(userId: number): Promise<Array<JuzTransferRequest & { communityName: string; toUsername: string; fromUsername: string; type: 'received' | 'sent' }>> {
+  async getUserJuzTransferRequests(userId: number): Promise<Array<JuzTransferRequest & { communityName: string; toUsername: string; fromUsername: string; type: 'received' | 'sent'; fromMemberUsername: string; toMemberUsername: string }>> {
     const member = await db
       .select({ id: communityMembers.id })
       .from(communityMembers)
@@ -981,7 +981,7 @@ export class DatabaseStorage implements IStorage {
           sql`${juzTransferRequests.toMemberId} IN (${sql.join(memberIds, sql`, `)})`
         )
       )
-      .orderBy(desc(juzTransferRequests.createdAt));
+      .orderBy(desc(juzTransferRequests.requestedAt));
 
     return requests.map(r => ({
       ...r.request,
