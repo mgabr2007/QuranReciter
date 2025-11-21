@@ -258,14 +258,16 @@ export const communityMembers = pgTable("community_members", {
   uniqueMembership: index("unique_membership_idx").on(table.communityId, table.userId),
 }));
 
-// Juz assignments table
+// Juz assignments table (members can have multiple juz)
 export const juzAssignments = pgTable("juz_assignments", {
   id: serial("id").primaryKey(),
-  communityMemberId: integer("community_member_id").notNull().references(() => communityMembers.id, { onDelete: 'cascade' }).unique(),
+  communityMemberId: integer("community_member_id").notNull().references(() => communityMembers.id, { onDelete: 'cascade' }),
   communityId: integer("community_id").notNull().references(() => communities.id, { onDelete: 'cascade' }),
   juzNumber: integer("juz_number").notNull(), // 1-30
   assignedAt: timestamp("assigned_at").defaultNow(),
   canModifyUntil: timestamp("can_modify_until").notNull(), // 2 days from assignment
+  isCompleted: boolean("is_completed").notNull().default(false),
+  completedAt: timestamp("completed_at"),
 }, (table) => ({
   communityMemberIdx: index("community_member_idx").on(table.communityMemberId),
   uniqueJuzPerCommunity: uniqueIndex("unique_juz_per_community_idx").on(table.communityId, table.juzNumber),
@@ -286,6 +288,21 @@ export const weeklyProgress = pgTable("weekly_progress", {
 }, (table) => ({
   memberWeekIdx: index("member_week_idx").on(table.communityMemberId, table.weekStartDate),
   weekJuzIdx: index("week_juz_idx").on(table.weekStartDate, table.juzNumber),
+}));
+
+// Juz transfer requests table
+export const juzTransferRequests = pgTable("juz_transfer_requests", {
+  id: serial("id").primaryKey(),
+  communityId: integer("community_id").notNull().references(() => communities.id, { onDelete: 'cascade' }),
+  juzNumber: integer("juz_number").notNull(), // 1-30
+  fromMemberId: integer("from_member_id").references(() => communityMembers.id, { onDelete: 'cascade' }), // null if juz is available
+  toMemberId: integer("to_member_id").notNull().references(() => communityMembers.id, { onDelete: 'cascade' }),
+  status: text("status").notNull().default("pending"), // pending, accepted, declined
+  requestedAt: timestamp("requested_at").defaultNow(),
+  respondedAt: timestamp("responded_at"),
+}, (table) => ({
+  communityIdx: index("transfer_community_idx").on(table.communityId),
+  statusIdx: index("transfer_status_idx").on(table.status),
 }));
 
 // Insert schemas for community tables
@@ -311,6 +328,12 @@ export const insertWeeklyProgressSchema = createInsertSchema(weeklyProgress).omi
   updatedAt: true,
 });
 
+export const insertJuzTransferRequestSchema = createInsertSchema(juzTransferRequests).omit({
+  id: true,
+  requestedAt: true,
+  respondedAt: true,
+});
+
 // Types for community tables
 export type Community = typeof communities.$inferSelect;
 export type InsertCommunity = z.infer<typeof insertCommunitySchema>;
@@ -320,6 +343,8 @@ export type JuzAssignment = typeof juzAssignments.$inferSelect;
 export type InsertJuzAssignment = z.infer<typeof insertJuzAssignmentSchema>;
 export type WeeklyProgress = typeof weeklyProgress.$inferSelect;
 export type InsertWeeklyProgress = z.infer<typeof insertWeeklyProgressSchema>;
+export type JuzTransferRequest = typeof juzTransferRequests.$inferSelect;
+export type InsertJuzTransferRequest = z.infer<typeof insertJuzTransferRequestSchema>;
 
 // Relations for community tables
 export const communitiesRelations = relations(communities, ({ one, many }) => ({
@@ -353,6 +378,21 @@ export const juzAssignmentsRelations = relations(juzAssignments, ({ one }) => ({
 export const weeklyProgressRelations = relations(weeklyProgress, ({ one }) => ({
   communityMember: one(communityMembers, {
     fields: [weeklyProgress.communityMemberId],
+    references: [communityMembers.id],
+  }),
+}));
+
+export const juzTransferRequestsRelations = relations(juzTransferRequests, ({ one }) => ({
+  community: one(communities, {
+    fields: [juzTransferRequests.communityId],
+    references: [communities.id],
+  }),
+  fromMember: one(communityMembers, {
+    fields: [juzTransferRequests.fromMemberId],
+    references: [communityMembers.id],
+  }),
+  toMember: one(communityMembers, {
+    fields: [juzTransferRequests.toMemberId],
     references: [communityMembers.id],
   }),
 }));

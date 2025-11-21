@@ -10,6 +10,8 @@ import {
   communities,
   communityMembers,
   juzAssignments,
+  weeklyProgress,
+  juzTransferRequests,
   type User, 
   type InsertUser,
   type UserPreferences,
@@ -29,7 +31,11 @@ import {
   type CommunityMember,
   type InsertCommunityMember,
   type JuzAssignment,
-  type InsertJuzAssignment
+  type InsertJuzAssignment,
+  type WeeklyProgress,
+  type InsertWeeklyProgress,
+  type JuzTransferRequest,
+  type InsertJuzTransferRequest
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, notInArray } from "drizzle-orm";
@@ -89,6 +95,22 @@ export interface IStorage {
   getUserJuzAssignment(userId: number, communityId: number): Promise<JuzAssignment | undefined>;
   updateJuzAssignment(userId: number, communityId: number, newJuzNumber: number): Promise<JuzAssignment>;
   canModifyJuzAssignment(userId: number, communityId: number): Promise<boolean>;
+  
+  getCommunityDetails(communityId: number): Promise<{
+    community: Community;
+    juzData: Array<{
+      juzNumber: number;
+      member: { id: number; username: string } | null;
+      completionPercentage: number;
+      status: 'completed' | 'in_progress' | 'not_started' | 'available';
+      assignmentId: number | null;
+    }>;
+  }>;
+  createJuzTransferRequest(communityId: number, juzNumber: number, fromMemberId: number | null, toMemberId: number): Promise<JuzTransferRequest>;
+  getUserJuzTransferRequests(userId: number): Promise<Array<JuzTransferRequest & { communityName: string; toUsername: string; fromUsername?: string }>>;
+  respondToJuzTransferRequest(requestId: number, userId: number, accept: boolean): Promise<void>;
+  claimAvailableJuz(userId: number, communityId: number, juzNumber: number): Promise<JuzAssignment>;
+  getUserJuzAssignments(userId: number, communityId: number): Promise<JuzAssignment[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -803,6 +825,300 @@ export class DatabaseStorage implements IStorage {
 
     const now = new Date();
     return now <= new Date(assignment.canModifyUntil);
+  }
+
+  async getCommunityDetails(communityId: number): Promise<{
+    community: Community;
+    juzData: Array<{
+      juzNumber: number;
+      member: { id: number; username: string } | null;
+      completionPercentage: number;
+      status: 'completed' | 'in_progress' | 'not_started' | 'available';
+      assignmentId: number | null;
+    }>;
+  }> {
+    const [community] = await db
+      .select()
+      .from(communities)
+      .where(eq(communities.id, communityId));
+
+    if (!community) {
+      throw new Error("Community not found");
+    }
+
+    const assignments = await db
+      .select({
+        juzNumber: juzAssignments.juzNumber,
+        assignmentId: juzAssignments.id,
+        isCompleted: juzAssignments.isCompleted,
+        memberId: communityMembers.id,
+        userId: communityMembers.userId,
+        username: users.username,
+      })
+      .from(juzAssignments)
+      .innerJoin(communityMembers, eq(juzAssignments.communityMemberId, communityMembers.id))
+      .innerJoin(users, eq(communityMembers.userId, users.id))
+      .where(eq(juzAssignments.communityId, communityId));
+
+    const assignmentMap = new Map(
+      assignments.map(a => [
+        a.juzNumber,
+        {
+          member: { id: a.memberId, username: a.username },
+          assignmentId: a.assignmentId,
+          isCompleted: a.isCompleted
+        }
+      ])
+    );
+
+    const progressData = await db
+      .select({
+        juzNumber: weeklyProgress.juzNumber,
+        completedAyahs: sql<number>`SUM(${weeklyProgress.completedAyahs})::int`,
+        totalAyahsInJuz: weeklyProgress.totalAyahsInJuz,
+      })
+      .from(weeklyProgress)
+      .innerJoin(communityMembers, eq(weeklyProgress.communityMemberId, communityMembers.id))
+      .where(eq(communityMembers.communityId, communityId))
+      .groupBy(weeklyProgress.juzNumber, weeklyProgress.totalAyahsInJuz);
+
+    const progressMap = new Map(
+      progressData.map(p => [
+        p.juzNumber,
+        {
+          completedAyahs: p.completedAyahs || 0,
+          totalAyahs: p.totalAyahsInJuz
+        }
+      ])
+    );
+
+    const juzData = Array.from({ length: 30 }, (_, i) => {
+      const juzNumber = i + 1;
+      const assignment = assignmentMap.get(juzNumber);
+      const progress = progressMap.get(juzNumber);
+
+      let status: 'completed' | 'in_progress' | 'not_started' | 'available';
+      let completionPercentage = 0;
+
+      if (!assignment) {
+        status = 'available';
+      } else if (assignment.isCompleted) {
+        status = 'completed';
+        completionPercentage = 100;
+      } else if (progress && progress.completedAyahs > 0) {
+        status = 'in_progress';
+        completionPercentage = Math.round((progress.completedAyahs / progress.totalAyahs) * 100);
+      } else {
+        status = 'not_started';
+      }
+
+      return {
+        juzNumber,
+        member: assignment?.member || null,
+        completionPercentage,
+        status,
+        assignmentId: assignment?.assignmentId || null,
+      };
+    });
+
+    return { community, juzData };
+  }
+
+  async createJuzTransferRequest(
+    communityId: number,
+    juzNumber: number,
+    fromMemberId: number | null,
+    toMemberId: number
+  ): Promise<JuzTransferRequest> {
+    const [request] = await db
+      .insert(juzTransferRequests)
+      .values({
+        communityId,
+        juzNumber,
+        fromMemberId,
+        toMemberId,
+        status: 'pending'
+      })
+      .returning();
+
+    return request;
+  }
+
+  async getUserJuzTransferRequests(userId: number): Promise<Array<JuzTransferRequest & { communityName: string; toUsername: string; fromUsername?: string }>> {
+    const member = await db
+      .select({ id: communityMembers.id })
+      .from(communityMembers)
+      .where(eq(communityMembers.userId, userId));
+
+    const memberIds = member.map(m => m.id);
+
+    if (memberIds.length === 0) {
+      return [];
+    }
+
+    const requests = await db
+      .select({
+        request: juzTransferRequests,
+        communityName: communities.name,
+        toUser: users,
+        fromUser: sql<{ username: string } | null>`
+          CASE 
+            WHEN ${juzTransferRequests.fromMemberId} IS NOT NULL 
+            THEN (SELECT row_to_json(u) FROM users u 
+                  INNER JOIN community_members cm ON u.id = cm.user_id 
+                  WHERE cm.id = ${juzTransferRequests.fromMemberId})
+            ELSE NULL 
+          END
+        `,
+      })
+      .from(juzTransferRequests)
+      .innerJoin(communities, eq(juzTransferRequests.communityId, communities.id))
+      .innerJoin(communityMembers, eq(juzTransferRequests.toMemberId, communityMembers.id))
+      .innerJoin(users, eq(communityMembers.userId, users.id))
+      .where(
+        and(
+          eq(juzTransferRequests.status, 'pending'),
+          sql`${juzTransferRequests.fromMemberId} IN (${sql.join(memberIds, sql`, `)})`
+        )
+      );
+
+    return requests.map(r => ({
+      ...r.request,
+      communityName: r.communityName,
+      toUsername: r.toUser.username,
+      fromUsername: r.fromUser?.username,
+    }));
+  }
+
+  async respondToJuzTransferRequest(requestId: number, userId: number, accept: boolean): Promise<void> {
+    await db.transaction(async (tx) => {
+      const [request] = await tx
+        .select({
+          request: juzTransferRequests,
+          fromMemberId: communityMembers.id,
+        })
+        .from(juzTransferRequests)
+        .leftJoin(communityMembers, eq(juzTransferRequests.fromMemberId, communityMembers.id))
+        .where(eq(juzTransferRequests.id, requestId));
+
+      if (!request) {
+        throw new Error("Transfer request not found");
+      }
+
+      if (request.fromMemberId) {
+        const [fromMember] = await tx
+          .select({ userId: communityMembers.userId })
+          .from(communityMembers)
+          .where(eq(communityMembers.id, request.fromMemberId));
+
+        if (!fromMember || fromMember.userId !== userId) {
+          throw new Error("Unauthorized to respond to this request");
+        }
+      }
+
+      if (accept) {
+        if (request.request.fromMemberId) {
+          await tx
+            .delete(juzAssignments)
+            .where(
+              and(
+                eq(juzAssignments.communityMemberId, request.request.fromMemberId),
+                eq(juzAssignments.juzNumber, request.request.juzNumber)
+              )
+            );
+        }
+
+        const canModifyUntil = new Date();
+        canModifyUntil.setDate(canModifyUntil.getDate() + 2);
+
+        await tx
+          .insert(juzAssignments)
+          .values({
+            communityMemberId: request.request.toMemberId,
+            communityId: request.request.communityId,
+            juzNumber: request.request.juzNumber,
+            canModifyUntil
+          });
+
+        await tx
+          .update(juzTransferRequests)
+          .set({
+            status: 'accepted',
+            respondedAt: new Date()
+          })
+          .where(eq(juzTransferRequests.id, requestId));
+      } else {
+        await tx
+          .update(juzTransferRequests)
+          .set({
+            status: 'declined',
+            respondedAt: new Date()
+          })
+          .where(eq(juzTransferRequests.id, requestId));
+      }
+    });
+  }
+
+  async claimAvailableJuz(userId: number, communityId: number, juzNumber: number): Promise<JuzAssignment> {
+    return await db.transaction(async (tx) => {
+      const [member] = await tx
+        .select()
+        .from(communityMembers)
+        .where(
+          and(
+            eq(communityMembers.userId, userId),
+            eq(communityMembers.communityId, communityId)
+          )
+        );
+
+      if (!member) {
+        throw new Error("User is not a member of this community");
+      }
+
+      const existingAssignment = await tx
+        .select()
+        .from(juzAssignments)
+        .where(
+          and(
+            eq(juzAssignments.communityId, communityId),
+            eq(juzAssignments.juzNumber, juzNumber)
+          )
+        );
+
+      if (existingAssignment.length > 0) {
+        throw new Error("Juz is already assigned");
+      }
+
+      const canModifyUntil = new Date();
+      canModifyUntil.setDate(canModifyUntil.getDate() + 2);
+
+      const [assignment] = await tx
+        .insert(juzAssignments)
+        .values({
+          communityMemberId: member.id,
+          communityId,
+          juzNumber,
+          canModifyUntil
+        })
+        .returning();
+
+      return assignment;
+    });
+  }
+
+  async getUserJuzAssignments(userId: number, communityId: number): Promise<JuzAssignment[]> {
+    const result = await db
+      .select({ assignment: juzAssignments })
+      .from(juzAssignments)
+      .innerJoin(communityMembers, eq(juzAssignments.communityMemberId, communityMembers.id))
+      .where(
+        and(
+          eq(communityMembers.userId, userId),
+          eq(communityMembers.communityId, communityId)
+        )
+      );
+
+    return result.map(r => r.assignment);
   }
 }
 
