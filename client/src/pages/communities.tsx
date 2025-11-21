@@ -144,27 +144,29 @@ export default function Communities() {
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {communities.map((community) => (
                   <Card key={community.id} className="hover:shadow-lg transition-shadow" data-testid={`card-community-${community.id}`}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <CardTitle className="text-xl mb-1">{community.name}</CardTitle>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="text-xs">
-                              <Users className="w-3 h-3 mr-1" />
-                              {community.maxMembers} {isArabic ? "أعضاء" : "Members"}
-                            </Badge>
+                    <div onClick={() => setLocation(`/communities/${community.id}`)} className="cursor-pointer">
+                      <CardHeader>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <CardTitle className="text-xl mb-1">{community.name}</CardTitle>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="text-xs">
+                                <Users className="w-3 h-3 mr-1" />
+                                {community.maxMembers} {isArabic ? "أعضاء" : "Members"}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center flex-shrink-0">
+                            <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                           </div>
                         </div>
-                        <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                        </div>
-                      </div>
-                      {community.description && (
-                        <CardDescription className="line-clamp-2">
-                          {community.description}
-                        </CardDescription>
-                      )}
-                    </CardHeader>
+                        {community.description && (
+                          <CardDescription className="line-clamp-2">
+                            {community.description}
+                          </CardDescription>
+                        )}
+                      </CardHeader>
+                    </div>
                     <CardFooter>
                       {user && (
                         isAlreadyMember(community.id) ? (

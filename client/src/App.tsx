@@ -15,6 +15,7 @@ import Memorization from "@/pages/memorization";
 import Communities from "@/pages/communities";
 import CreateCommunity from "@/pages/create-community";
 import MyCommunities from "@/pages/my-communities";
+import CommunityDetail from "@/pages/community-detail";
 import Search from "@/pages/search";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
@@ -30,6 +31,7 @@ function Router() {
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
         <Route path="/communities" component={Communities} />
+        <Route path="/communities/:id" component={CommunityDetail} />
         <Route path="/search" component={Search} />
         
         {/* Protected routes */}
