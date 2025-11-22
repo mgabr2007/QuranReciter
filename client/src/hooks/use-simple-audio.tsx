@@ -198,10 +198,12 @@ export const useSimpleAudio = ({
       const nextIndex = prev.currentAyahIndex + 1;
       console.log('goToNext - Moving to next ayah:', { currentIndex: prev.currentAyahIndex, nextIndex, totalAyahs: ayahsRef.current.length });
       if (nextIndex < ayahsRef.current.length) {
+        currentAyahIndexRef.current = nextIndex;
         onAyahChangeRef.current?.(nextIndex);
         return { ...prev, currentAyahIndex: nextIndex, isPaused: false, pauseCountdown: 0 };
       } else if (autoRepeatRef.current) {
         console.log('goToNext - Auto-repeat enabled, resetting to 0');
+        currentAyahIndexRef.current = 0;
         onAyahChangeRef.current?.(0);
         return { ...prev, currentAyahIndex: 0, isPaused: false, pauseCountdown: 0 };
       } else {
@@ -227,6 +229,7 @@ export const useSimpleAudio = ({
     
     setState(prev => {
       const prevIndex = Math.max(0, prev.currentAyahIndex - 1);
+      currentAyahIndexRef.current = prevIndex;
       onAyahChangeRef.current?.(prevIndex);
       return { ...prev, currentAyahIndex: prevIndex, isPaused: false, pauseCountdown: 0 };
     });
@@ -347,10 +350,12 @@ export const useSimpleAudio = ({
             const nextIndex = prev.currentAyahIndex + 1;
             console.log('onEnded (no pause) - Moving to next ayah immediately:', { currentIndex: prev.currentAyahIndex, nextIndex, totalAyahs: ayahsRef.current.length });
             if (nextIndex < ayahsRef.current.length) {
+              currentAyahIndexRef.current = nextIndex;
               onAyahChangeRef.current?.(nextIndex);
               return { ...prev, currentAyahIndex: nextIndex, isPaused: false, pauseCountdown: 0 };
             } else if (autoRepeatRef.current) {
               console.log('onEnded (no pause) - Auto-repeat surah enabled, resetting to 0');
+              currentAyahIndexRef.current = 0;
               onAyahChangeRef.current?.(0);
               return { ...prev, currentAyahIndex: 0, isPaused: false, pauseCountdown: 0 };
             } else {
@@ -408,10 +413,12 @@ export const useSimpleAudio = ({
             const nextIndex = prev.currentAyahIndex + 1;
             console.log('onEnded auto-advance - Moving to next ayah:', { currentIndex: prev.currentAyahIndex, nextIndex, totalAyahs: ayahsRef.current.length });
             if (nextIndex < ayahsRef.current.length) {
+              currentAyahIndexRef.current = nextIndex;
               onAyahChangeRef.current?.(nextIndex);
               return { ...prev, currentAyahIndex: nextIndex, isPaused: false, pauseCountdown: 0 };
             } else if (autoRepeatRef.current) {
               console.log('onEnded auto-advance - Auto-repeat surah enabled, resetting to 0');
+              currentAyahIndexRef.current = 0;
               onAyahChangeRef.current?.(0);
               return { ...prev, currentAyahIndex: 0, isPaused: false, pauseCountdown: 0 };
             } else {
@@ -518,6 +525,7 @@ export const useSimpleAudio = ({
         pauseTimeoutRef.current = null;
       }
       
+      currentAyahIndexRef.current = index;
       setState(prev => ({ ...prev, currentAyahIndex: index, isPaused: false, pauseCountdown: 0 }));
       onAyahChangeRef.current?.(index);
     }
