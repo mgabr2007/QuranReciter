@@ -38,7 +38,7 @@ import {
   type InsertJuzTransferRequest
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, or, sql, notInArray } from "drizzle-orm";
+import { eq, desc, and, or, sql, notInArray, ilike } from "drizzle-orm";
 
 export interface IStorage {
   getUserById(id: number): Promise<User | undefined>;
@@ -1209,10 +1209,10 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(surahs, eq(ayahs.surahId, surahs.id))
       .where(
         or(
-          sql`${ayahs.text} ILIKE ${searchTerm}`,
-          sql`${ayahs.translation} ILIKE ${searchTerm}`,
-          sql`${surahs.name} ILIKE ${searchTerm}`,
-          sql`${surahs.nameArabic} ILIKE ${searchTerm}`
+          ilike(ayahs.text, searchTerm),
+          ilike(ayahs.translation, searchTerm),
+          ilike(surahs.name, searchTerm),
+          ilike(surahs.nameArabic, searchTerm)
         )
       )
       .limit(50);
