@@ -154,6 +154,17 @@ export default function Home() {
           lastSurah: selectedSurah,
           lastAyah: ayah.number,
         });
+        
+        // Update session progress when ayah changes (not just at end)
+        if (currentSessionId && sessionStartTime) {
+          const sessionTime = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
+          updateSessionMutation.mutate({
+            sessionId: currentSessionId,
+            completedAyahs: ayahIndex + 1, // +1 because we just completed this ayah
+            sessionTime,
+            isCompleted: false,
+          });
+        }
       }
     },
     onPlayStart: async () => {
@@ -251,6 +262,25 @@ export default function Home() {
       audioPlayer.skipToAyah(0);
     }
   }, [selectedSurah, startAyah, endAyah]);
+
+  // Save session on unmount (cleanup handler)
+  useEffect(() => {
+    return () => {
+      if (currentSessionId && sessionStartTime) {
+        const sessionTime = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
+        const completedAyahs = audioPlayer.currentAyahIndex;
+        
+        // Use navigator.sendBeacon for more reliable unload persistence
+        const data = JSON.stringify({
+          completedAyahs,
+          sessionTime,
+          isCompleted: false,
+        });
+        
+        navigator.sendBeacon(`/api/sessions/${currentSessionId}`, new Blob([data], { type: 'application/json' }));
+      }
+    };
+  }, [currentSessionId, sessionStartTime]);
 
   const handleSelectionChange = (surah: number, start: number, end: number) => {
     // Stop current playback

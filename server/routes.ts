@@ -86,6 +86,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Search API
+  app.get("/api/search", async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query || query.trim().length < 3) {
+        return res.json([]);
+      }
+      const results = await storage.searchAyahs(query.trim());
+      res.json(results);
+    } catch (error) {
+      console.error('Search error:', error);
+      res.status(500).json({ message: "Search failed" });
+    }
+  });
+
   // User preferences routes
   app.get("/api/preferences", requireAuth, async (req, res) => {
     try {

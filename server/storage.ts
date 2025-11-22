@@ -112,6 +112,7 @@ export interface IStorage {
   claimAvailableJuz(userId: number, communityId: number, juzNumber: number): Promise<JuzAssignment>;
   getUserJuzAssignments(userId: number, communityId: number): Promise<JuzAssignment[]>;
   updateWeeklyProgress(userId: number, surahId: number, ayahNumber: number): Promise<void>;
+  searchAyahs(query: string): Promise<Array<Ayah & { surahName: string; surahNameArabic: string }>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1188,6 +1189,35 @@ export class DatabaseStorage implements IStorage {
           },
         });
     }
+  }
+
+  async searchAyahs(query: string): Promise<Array<Ayah & { surahName: string; surahNameArabic: string }>> {
+    const searchTerm = `%${query}%`;
+    
+    // Only select fields needed by the frontend to minimize payload size
+    const results = await db
+      .select({
+        id: ayahs.id,
+        surahId: ayahs.surahId,
+        number: ayahs.number,
+        text: ayahs.text,
+        translation: ayahs.translation,
+        surahName: surahs.name,
+        surahNameArabic: surahs.nameArabic,
+      })
+      .from(ayahs)
+      .innerJoin(surahs, eq(ayahs.surahId, surahs.id))
+      .where(
+        or(
+          sql`${ayahs.text} ILIKE ${searchTerm}`,
+          sql`${ayahs.translation} ILIKE ${searchTerm}`,
+          sql`${surahs.name} ILIKE ${searchTerm}`,
+          sql`${surahs.nameArabic} ILIKE ${searchTerm}`
+        )
+      )
+      .limit(50);
+
+    return results as any; // Cast because we're returning a subset
   }
 }
 
