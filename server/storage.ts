@@ -1194,6 +1194,15 @@ export class DatabaseStorage implements IStorage {
   async searchAyahs(query: string): Promise<Array<Ayah & { surahName: string; surahNameArabic: string }>> {
     const searchTerm = `%${query}%`;
     
+    // Helper function to remove Arabic diacritics for better search matching
+    const removeDiacritics = (text: string) => {
+      // Remove Arabic diacritical marks (tashkeel): fatha, damma, kasra, sukun, shadda, tanween, etc.
+      return text.replace(/[\u064B-\u065F\u0670]/g, '');
+    };
+    
+    const normalizedQuery = removeDiacritics(query);
+    const normalizedSearchTerm = `%${normalizedQuery}%`;
+    
     // Only select fields needed by the frontend to minimize payload size
     const results = await db
       .select({
@@ -1209,10 +1218,12 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(surahs, eq(ayahs.surahId, surahs.id))
       .where(
         or(
-          ilike(ayahs.text, searchTerm),
+          // Search Arabic text with diacritics removed for better matching
+          sql`regexp_replace(${ayahs.text}, '[\u064B-\u065F\u0670]', '', 'g') ILIKE ${normalizedSearchTerm}`,
           ilike(ayahs.translation, searchTerm),
           ilike(surahs.name, searchTerm),
-          ilike(surahs.nameArabic, searchTerm)
+          // Search Arabic surah names with diacritics removed too
+          sql`regexp_replace(${surahs.nameArabic}, '[\u064B-\u065F\u0670]', '', 'g') ILIKE ${normalizedSearchTerm}`
         )
       )
       .limit(50);
