@@ -54,6 +54,7 @@ export const useSimpleAudio = ({
   const autoRepeatRef = useRef(autoRepeat);
   const autoRepeatAyahRef = useRef(autoRepeatAyah);
   const pauseDurationRef = useRef(pauseDuration);
+  const currentAyahIndexRef = useRef(0);
   
   const [state, setState] = useState<AudioState>({
     isPlaying: false,
@@ -83,6 +84,11 @@ export const useSimpleAudio = ({
     autoRepeatAyahRef.current = autoRepeatAyah;
     pauseDurationRef.current = pauseDuration;
   }, [onAyahChange, onSessionComplete, onSurahComplete, onPlayStart, ayahs, autoRepeat, autoRepeatAyah, pauseDuration]);
+
+  // Update current ayah index ref to avoid stale closures in event listeners
+  useEffect(() => {
+    currentAyahIndexRef.current = state.currentAyahIndex;
+  }, [state.currentAyahIndex]);
 
   const formatNumber = (num: number, padding: number): string => {
     return num.toString().padStart(padding, '0');
@@ -289,7 +295,8 @@ export const useSimpleAudio = ({
         const extraPause = pauseDurationRef.current; // Extra pause time configured by user
         
         // Log practice for the ayah that just finished
-        const currentAyah = ayahsRef.current[state.currentAyahIndex];
+        // Use ref instead of state to avoid stale closure
+        const currentAyah = ayahsRef.current[currentAyahIndexRef.current];
         if (currentAyah) {
           apiRequest('POST', '/api/practice/log', {
             surahId: currentAyah.surahId,
