@@ -282,11 +282,31 @@ export class DatabaseStorage implements IStorage {
     return newBookmark;
   }
 
-  async getUserBookmarks(userId: number): Promise<BookmarkedAyah[]> {
-    return await db
-      .select()
+  async getUserBookmarks(userId: number): Promise<Array<BookmarkedAyah & { text: string; translation: string }>> {
+    const results = await db
+      .select({
+        id: bookmarkedAyahs.id,
+        userId: bookmarkedAyahs.userId,
+        surahId: bookmarkedAyahs.surahId,
+        ayahNumber: bookmarkedAyahs.ayahNumber,
+        notes: bookmarkedAyahs.notes,
+        tags: bookmarkedAyahs.tags,
+        isFavorite: bookmarkedAyahs.isFavorite,
+        rating: bookmarkedAyahs.rating,
+        createdAt: bookmarkedAyahs.createdAt,
+        updatedAt: bookmarkedAyahs.updatedAt,
+        text: ayahs.text,
+        translation: ayahs.translation,
+      })
       .from(bookmarkedAyahs)
-      .where(eq(bookmarkedAyahs.userId, userId));
+      .innerJoin(ayahs, and(
+        eq(bookmarkedAyahs.surahId, ayahs.surahId),
+        eq(bookmarkedAyahs.ayahNumber, ayahs.number)
+      ))
+      .where(eq(bookmarkedAyahs.userId, userId))
+      .orderBy(bookmarkedAyahs.createdAt);
+    
+    return results as any;
   }
 
   async updateBookmark(id: number, updates: Partial<InsertBookmarkedAyah>): Promise<BookmarkedAyah> {
