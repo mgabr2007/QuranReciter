@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { PageLayout } from "@/components/page-layout";
 import { PageHeader } from "@/components/page-header";
@@ -32,10 +32,12 @@ export default function Home() {
   const [noPause, setNoPause] = useState(false);
   const [autoRepeat, setAutoRepeat] = useState(false);
   const [autoRepeatAyah, setAutoRepeatAyah] = useState(false);
-  const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
-  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [showTranslation, setShowTranslation] = useState(true);
   const [showVerseSearch, setShowVerseSearch] = useState(false);
+  
+  // Use refs for session tracking so callbacks always have latest values
+  const currentSessionIdRef = useRef<number | null>(null);
+  const sessionStartTimeRef = useRef<Date | null>(null);
 
 
 
@@ -95,8 +97,8 @@ export default function Home() {
       return session;
     },
     onSuccess: (session: any) => {
-      setCurrentSessionId(session.id);
-      setSessionStartTime(new Date());
+      currentSessionIdRef.current = session.id;
+      sessionStartTimeRef.current = new Date();
       queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sessions/stats"] });
     },
@@ -156,10 +158,10 @@ export default function Home() {
         });
         
         // Update session progress when ayah changes (not just at end)
-        if (currentSessionId && sessionStartTime) {
-          const sessionTime = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
+        if (currentSessionIdRef.current && sessionStartTimeRef.current) {
+          const sessionTime = Math.floor((Date.now() - sessionStartTimeRef.current.getTime()) / 1000);
           updateSessionMutation.mutate({
-            sessionId: currentSessionId,
+            sessionId: currentSessionIdRef.current,
             completedAyahs: ayahIndex + 1, // +1 because we just completed this ayah
             sessionTime,
             isCompleted: false,
@@ -169,7 +171,7 @@ export default function Home() {
     },
     onPlayStart: async () => {
       // Create a new session when playback starts (if one doesn't exist)
-      if (!currentSessionId && currentSurah) {
+      if (!currentSessionIdRef.current && currentSurah) {
         try {
           await createSessionMutation.mutateAsync({
             surahId: selectedSurah,
@@ -212,10 +214,10 @@ export default function Home() {
         console.log('Completed entire Quran!');
         
         // Complete the session
-        if (currentSessionId && sessionStartTime) {
-          const sessionTime = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
+        if (currentSessionIdRef.current && sessionStartTimeRef.current) {
+          const sessionTime = Math.floor((Date.now() - sessionStartTimeRef.current.getTime()) / 1000);
           updateSessionMutation.mutate({
-            sessionId: currentSessionId,
+            sessionId: currentSessionIdRef.current,
             completedAyahs: selectedAyahs.length,
             sessionTime,
             isCompleted: true,
@@ -227,16 +229,16 @@ export default function Home() {
           description: 'Completed the entire Quran! Masha\'Allah!',
         });
         
-        setCurrentSessionId(null);
-        setSessionStartTime(null);
+        currentSessionIdRef.current = null;
+        sessionStartTimeRef.current = null;
       }
     },
     onSessionComplete: () => {
       // This is now only used when user manually stops or session ends without surah completion
-      if (currentSessionId && sessionStartTime) {
-        const sessionTime = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
+      if (currentSessionIdRef.current && sessionStartTimeRef.current) {
+        const sessionTime = Math.floor((Date.now() - sessionStartTimeRef.current.getTime()) / 1000);
         updateSessionMutation.mutate({
-          sessionId: currentSessionId,
+          sessionId: currentSessionIdRef.current,
           completedAyahs: selectedAyahs.length,
           sessionTime,
           isCompleted: true,
@@ -250,8 +252,8 @@ export default function Home() {
           }),
         });
         
-        setCurrentSessionId(null);
-        setSessionStartTime(null);
+        currentSessionIdRef.current = null;
+        sessionStartTimeRef.current = null;
       }
     },
   });
@@ -266,8 +268,8 @@ export default function Home() {
   // Save session on unmount (cleanup handler)
   useEffect(() => {
     return () => {
-      if (currentSessionId && sessionStartTime) {
-        const sessionTime = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
+      if (currentSessionIdRef.current && sessionStartTimeRef.current) {
+        const sessionTime = Math.floor((Date.now() - sessionStartTimeRef.current.getTime()) / 1000);
         const completedAyahs = audioPlayer.currentAyahIndex;
         
         // Use navigator.sendBeacon for more reliable unload persistence
@@ -277,10 +279,10 @@ export default function Home() {
           isCompleted: false,
         });
         
-        navigator.sendBeacon(`/api/sessions/${currentSessionId}`, new Blob([data], { type: 'application/json' }));
+        navigator.sendBeacon(`/api/sessions/${currentSessionIdRef.current}`, new Blob([data], { type: 'application/json' }));
       }
     };
-  }, [currentSessionId, sessionStartTime]);
+  }, [audioPlayer.currentAyahIndex]);
 
   const handleSelectionChange = (surah: number, start: number, end: number) => {
     // Stop current playback
