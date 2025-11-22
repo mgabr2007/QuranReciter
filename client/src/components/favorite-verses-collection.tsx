@@ -11,6 +11,12 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { BookmarkedAyah, Surah } from "@shared/schema";
 
+// Extended type to include ayah text and translation from backend join
+type BookmarkedAyahWithText = BookmarkedAyah & {
+  text: string;
+  translation: string;
+};
+
 interface FavoriteVersesCollectionProps {
   onPlayVerse?: (surahId: number, ayahNumber: number) => void;
 }
@@ -26,7 +32,7 @@ export const FavoriteVersesCollection = ({ onPlayVerse }: FavoriteVersesCollecti
   const queryClient = useQueryClient();
 
   // Load bookmarks
-  const { data: bookmarks = [], isLoading } = useQuery<BookmarkedAyah[]>({
+  const { data: bookmarks = [], isLoading } = useQuery<BookmarkedAyahWithText[]>({
     queryKey: ["/api/bookmarks"],
   });
 
@@ -301,10 +307,33 @@ export const FavoriteVersesCollection = ({ onPlayVerse }: FavoriteVersesCollecti
                   </div>
                 </div>
 
-                {bookmark.notes && (
-                  <p className="text-gray-700 text-sm mb-3 leading-relaxed">
-                    {bookmark.notes}
+                {/* Arabic Text */}
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-3 mt-3">
+                  <p 
+                    className="text-lg leading-loose font-arabic text-gray-900 dark:text-white text-center"
+                    style={{ fontFamily: "'Amiri Quran', 'Arabic Typesetting', serif", lineHeight: 1.8 }}
+                    dir="rtl"
+                  >
+                    {bookmark.text}
                   </p>
+                </div>
+                
+                {/* English Translation */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mb-3 border border-blue-100 dark:border-blue-800">
+                  <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                    {bookmark.translation}
+                  </p>
+                </div>
+
+                {bookmark.notes && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 mb-3 border border-yellow-100 dark:border-yellow-800">
+                    <p className="text-xs font-medium text-yellow-800 dark:text-yellow-300 mb-1">
+                      📝 Your Notes:
+                    </p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      {bookmark.notes}
+                    </p>
+                  </div>
                 )}
 
                 {bookmark.tags && (

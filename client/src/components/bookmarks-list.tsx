@@ -12,6 +12,12 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { BookmarkedAyah, Surah } from "@shared/schema";
 
+// Extended type to include ayah text and translation from backend join
+type BookmarkedAyahWithText = BookmarkedAyah & {
+  text: string;
+  translation: string;
+};
+
 interface BookmarksListProps {
   onPlayAyah?: (surahId: number, ayahNumber: number) => void;
 }
@@ -24,7 +30,7 @@ export const BookmarksList = ({ onPlayAyah }: BookmarksListProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: bookmarks = [], isLoading } = useQuery<BookmarkedAyah[]>({
+  const { data: bookmarks = [], isLoading } = useQuery<BookmarkedAyahWithText[]>({
     queryKey: ["/api/bookmarks"],
   });
 
@@ -201,7 +207,7 @@ export const BookmarksList = ({ onPlayAyah }: BookmarksListProps) => {
                 >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-3">
                       <Badge variant="secondary" className="text-xs">
                         {getSurahName(bookmark.surahId)}
                       </Badge>
@@ -210,10 +216,33 @@ export const BookmarksList = ({ onPlayAyah }: BookmarksListProps) => {
                       </Badge>
                     </div>
                     
-                    {bookmark.notes && (
-                      <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                        {bookmark.notes}
+                    {/* Arabic Text */}
+                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-3">
+                      <p 
+                        className="text-xl leading-loose font-arabic text-gray-900 dark:text-white text-center"
+                        style={{ fontFamily: "'Amiri Quran', 'Arabic Typesetting', serif", lineHeight: 1.8 }}
+                        dir="rtl"
+                      >
+                        {bookmark.text}
                       </p>
+                    </div>
+                    
+                    {/* English Translation */}
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mb-3 border border-blue-100 dark:border-blue-800">
+                      <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                        {bookmark.translation}
+                      </p>
+                    </div>
+                    
+                    {bookmark.notes && (
+                      <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 mb-2 border border-yellow-100 dark:border-yellow-800">
+                        <p className="text-xs font-medium text-yellow-800 dark:text-yellow-300 mb-1">
+                          📝 Your Notes:
+                        </p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
+                          {bookmark.notes}
+                        </p>
+                      </div>
                     )}
                     
                     <p className="text-xs text-gray-500">
