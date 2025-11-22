@@ -223,6 +223,21 @@ The application follows a modern full-stack architecture with:
 - Built comprehensive dashboard with real-time statistics and infographics
 - 4 stat cards showing Listening Time, Total Sessions, Communities Joined, and Bookmarks
 - Quick action cards for Start Recitation, Browse Communities, View Analytics, and Search Verses
+
+### November 22, 2025 - Audio Player Stale Closure Bug Fix
+✅ **Critical Audio Logging Fix**
+- Fixed bug where all ayahs were logged as "ayah 1" due to stale closure in onEnded event listener
+- Root cause: Event listener was reading `state.currentAyahIndex` which captured stale value
+- Solution: Implemented synchronous `currentAyahIndexRef` updates inside all `setState` callbacks
+- Updated goToNext, goToPrevious, skipToAyah, and onEnded handlers to update ref synchronously
+- Practice tracker heatmap and community progress now accurately reflect actual recitation
+
+✅ **Technical Implementation**
+- Added `currentAyahIndexRef` to track current ayah index across re-renders
+- Ref updates happen synchronously inside setState callback functions (not in useEffect)
+- Event listeners now read `currentAyahIndexRef.current` for latest value
+- Database verification confirms correct ayah numbers (1, 2, 3, 4) being logged
+- Community weekly progress tracking works accurately with correct ayah counts
 - Recent Activity feed displaying latest listening sessions
 - Clean, modern design with proper spacing and visual hierarchy
 
