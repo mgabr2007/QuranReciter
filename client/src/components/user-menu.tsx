@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, History, Heart, Users } from "lucide-react";
+import { User, LogOut, History, Heart, Users, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export function UserMenu() {
@@ -102,6 +102,12 @@ export function UserMenu() {
           <DropdownMenuItem className="cursor-pointer" data-testid="menu-bookmarks">
             <Heart className="mr-2 h-4 w-4" />
             <span>Bookmarks</span>
+          </DropdownMenuItem>
+        </Link>
+        <Link href="/settings">
+          <DropdownMenuItem className="cursor-pointer" data-testid="menu-settings">
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Settings</span>
           </DropdownMenuItem>
         </Link>
         <DropdownMenuSeparator />

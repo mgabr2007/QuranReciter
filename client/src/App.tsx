@@ -20,6 +20,7 @@ import JoinCommunity from "@/pages/join-community";
 import Search from "@/pages/search";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
+import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -60,6 +61,11 @@ function Router() {
         <Route path="/my-communities">
           <ProtectedRoute>
             <MyCommunities />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/settings">
+          <ProtectedRoute>
+            <Settings />
           </ProtectedRoute>
         </Route>
         

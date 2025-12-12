@@ -212,3 +212,42 @@ export async function getCurrentUser(req: Request, res: Response) {
     res.status(500).json({ message: 'Failed to get user' });
   }
 }
+
+// Reset password handler (for logged-in users)
+export async function resetPassword(req: Request, res: Response) {
+  if (!req.session?.userId) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current password and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters' });
+    }
+
+    const user = await storage.getUserById(req.session.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify current password
+    const isValidPassword = await verifyPassword(currentPassword, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    // Hash new password and update
+    const hashedPassword = await hashPassword(newPassword);
+    await storage.updateUserPassword(user.id, hashedPassword);
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Failed to reset password' });
+  }
+}

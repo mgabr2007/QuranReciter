@@ -6,7 +6,7 @@ import { storage } from "./storage";
 import { insertUserPreferencesSchema, insertRecitationSessionSchema, insertBookmarkedAyahSchema, insertCommunitySchema, communityMembers } from "@shared/schema";
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { signup, login, logout, getCurrentUser, requireAuth, type AuthenticatedRequest } from "./auth";
+import { signup, login, logout, getCurrentUser, resetPassword, requireAuth, type AuthenticatedRequest } from "./auth";
 import { db, pool } from "./db";
 import { and, eq } from "drizzle-orm";
 
@@ -38,6 +38,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", login);
   app.post("/api/auth/logout", logout);
   app.get("/api/auth/me", getCurrentUser);
+  app.post("/api/auth/reset-password", resetPassword);
 
   // Quran data routes
   app.get("/api/surahs", async (req, res) => {
