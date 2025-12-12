@@ -38,6 +38,7 @@ export default function Home() {
   // Use refs for session tracking so callbacks always have latest values
   const currentSessionIdRef = useRef<number | null>(null);
   const sessionStartTimeRef = useRef<Date | null>(null);
+  const completedAyahsCountRef = useRef<number>(0);
 
 
 
@@ -156,22 +157,28 @@ export default function Home() {
           lastSurah: selectedSurah,
           lastAyah: ayah.number,
         });
-        
-        // Update session progress when ayah changes (not just at end)
-        if (currentSessionIdRef.current && sessionStartTimeRef.current) {
-          const sessionTime = Math.floor((Date.now() - sessionStartTimeRef.current.getTime()) / 1000);
-          updateSessionMutation.mutate({
-            sessionId: currentSessionIdRef.current,
-            completedAyahs: ayahIndex + 1, // +1 because we just completed this ayah
-            sessionTime,
-            isCompleted: false,
-          });
-        }
+      }
+    },
+    onAyahComplete: (completedIndex, duration) => {
+      // Increment completed ayahs count (this fires when an ayah FINISHES playing)
+      completedAyahsCountRef.current += 1;
+      
+      // Update session with accurate progress
+      if (currentSessionIdRef.current && sessionStartTimeRef.current) {
+        const sessionTime = Math.floor((Date.now() - sessionStartTimeRef.current.getTime()) / 1000);
+        updateSessionMutation.mutate({
+          sessionId: currentSessionIdRef.current,
+          completedAyahs: completedAyahsCountRef.current,
+          sessionTime,
+          isCompleted: false,
+        });
       }
     },
     onPlayStart: async () => {
       // Create a new session when playback starts (if one doesn't exist)
       if (!currentSessionIdRef.current && currentSurah) {
+        // Reset completed count for new session
+        completedAyahsCountRef.current = 0;
         try {
           await createSessionMutation.mutateAsync({
             surahId: selectedSurah,
@@ -218,7 +225,7 @@ export default function Home() {
           const sessionTime = Math.floor((Date.now() - sessionStartTimeRef.current.getTime()) / 1000);
           updateSessionMutation.mutate({
             sessionId: currentSessionIdRef.current,
-            completedAyahs: selectedAyahs.length,
+            completedAyahs: completedAyahsCountRef.current,
             sessionTime,
             isCompleted: true,
           });
@@ -231,6 +238,7 @@ export default function Home() {
         
         currentSessionIdRef.current = null;
         sessionStartTimeRef.current = null;
+        completedAyahsCountRef.current = 0;
       }
     },
     onSessionComplete: () => {
@@ -239,7 +247,7 @@ export default function Home() {
         const sessionTime = Math.floor((Date.now() - sessionStartTimeRef.current.getTime()) / 1000);
         updateSessionMutation.mutate({
           sessionId: currentSessionIdRef.current,
-          completedAyahs: selectedAyahs.length,
+          completedAyahs: completedAyahsCountRef.current,
           sessionTime,
           isCompleted: true,
         });
@@ -247,13 +255,14 @@ export default function Home() {
         toast({
           title: t('sessionCompleted'),
           description: t('completedAyahsTime', { 
-            count: selectedAyahs.length, 
+            count: completedAyahsCountRef.current, 
             time: `${Math.floor(sessionTime / 60)}m ${sessionTime % 60}s` 
           }),
         });
         
         currentSessionIdRef.current = null;
         sessionStartTimeRef.current = null;
+        completedAyahsCountRef.current = 0;
       }
     },
   });
@@ -270,11 +279,10 @@ export default function Home() {
     return () => {
       if (currentSessionIdRef.current && sessionStartTimeRef.current) {
         const sessionTime = Math.floor((Date.now() - sessionStartTimeRef.current.getTime()) / 1000);
-        const completedAyahs = audioPlayer.currentAyahIndex;
         
         // Use navigator.sendBeacon for more reliable unload persistence
         const data = JSON.stringify({
-          completedAyahs,
+          completedAyahs: completedAyahsCountRef.current,
           sessionTime,
           isCompleted: false,
         });
@@ -282,7 +290,7 @@ export default function Home() {
         navigator.sendBeacon(`/api/sessions/${currentSessionIdRef.current}`, new Blob([data], { type: 'application/json' }));
       }
     };
-  }, [audioPlayer.currentAyahIndex]);
+  }, []);
 
   const handleSelectionChange = (surah: number, start: number, end: number) => {
     // Stop current playback

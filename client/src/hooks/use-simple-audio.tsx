@@ -8,6 +8,7 @@ interface UseSimpleAudioProps {
   autoRepeat: boolean;
   autoRepeatAyah: boolean;
   onAyahChange?: (ayahIndex: number) => void;
+  onAyahComplete?: (completedIndex: number, duration: number) => void;
   onSessionComplete?: () => void;
   onSurahComplete?: () => void;
   onPlayStart?: () => void;
@@ -33,6 +34,7 @@ export const useSimpleAudio = ({
   autoRepeat,
   autoRepeatAyah,
   onAyahChange,
+  onAyahComplete,
   onSessionComplete,
   onSurahComplete,
   onPlayStart,
@@ -47,6 +49,7 @@ export const useSimpleAudio = ({
   
   // Refs to store latest callbacks and values to avoid stale closures
   const onAyahChangeRef = useRef(onAyahChange);
+  const onAyahCompleteRef = useRef(onAyahComplete);
   const onSessionCompleteRef = useRef(onSessionComplete);
   const onSurahCompleteRef = useRef(onSurahComplete);
   const onPlayStartRef = useRef(onPlayStart);
@@ -76,6 +79,7 @@ export const useSimpleAudio = ({
   // Update refs when props change
   useEffect(() => {
     onAyahChangeRef.current = onAyahChange;
+    onAyahCompleteRef.current = onAyahComplete;
     onSessionCompleteRef.current = onSessionComplete;
     onSurahCompleteRef.current = onSurahComplete;
     onPlayStartRef.current = onPlayStart;
@@ -83,7 +87,7 @@ export const useSimpleAudio = ({
     autoRepeatRef.current = autoRepeat;
     autoRepeatAyahRef.current = autoRepeatAyah;
     pauseDurationRef.current = pauseDuration;
-  }, [onAyahChange, onSessionComplete, onSurahComplete, onPlayStart, ayahs, autoRepeat, autoRepeatAyah, pauseDuration]);
+  }, [onAyahChange, onAyahComplete, onSessionComplete, onSurahComplete, onPlayStart, ayahs, autoRepeat, autoRepeatAyah, pauseDuration]);
 
   // Update current ayah index ref to avoid stale closures in event listeners
   useEffect(() => {
@@ -334,6 +338,10 @@ export const useSimpleAudio = ({
           }).catch(error => {
             console.error('Failed to update weekly progress:', error);
           });
+          
+          // Call onAyahComplete with the completed ayah index and duration
+          // This fires BEFORE advancing to the next ayah, making it reliable for session tracking
+          onAyahCompleteRef.current?.(currentAyahIndexRef.current, ayahDuration);
         }
         
         // If pauseDuration is 0 (no pause mode), skip pause entirely and advance immediately
