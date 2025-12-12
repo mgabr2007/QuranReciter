@@ -35,20 +35,9 @@ export const SurahSelector = ({
     refetchOnMount: true,
   });
 
-  console.log('SurahSelector data:', { 
-    surahs: surahs.length, 
-    isLoading, 
-    error, 
-    selectedSurah,
-    firstSurah: surahs[0],
-    surahsArray: surahs.slice(0, 3),
-    actualSurahs: surahs
-  });
-
   // Force refetch if surahs array is empty but not loading
   useEffect(() => {
     if (!isLoading && surahs.length === 0 && !error) {
-      console.log('Forcing refetch due to empty surahs');
       refetch();
     }
   }, [isLoading, surahs.length, error, refetch]);

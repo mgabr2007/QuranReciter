@@ -110,13 +110,10 @@ export const useSimpleAudio = ({
   const loadCurrentAyah = useCallback(() => {
     const ayah = ayahsRef.current[state.currentAyahIndex];
     if (!ayah || !audioRef.current) {
-      console.log('Cannot load ayah:', { ayah, hasAudioRef: !!audioRef.current });
       return;
     }
 
     const audioUrl = getAudioUrl(ayah.surahId, ayah.number);
-    
-    console.log(`Loading ayah ${ayah.number} from ${audioUrl}`, { surahId: ayah.surahId, ayahNumber: ayah.number });
     lastLoadedUrlRef.current = audioUrl;
     
     setState(prev => ({ ...prev, isLoading: true, error: null }));
@@ -154,7 +151,6 @@ export const useSimpleAudio = ({
       }, 1000);
     }
     
-    console.log('Starting playback, src:', audioRef.current.src);
     shouldAutoPlayRef.current = true;
     setState(prev => ({ ...prev, isPlaying: true, error: null }));
     audioRef.current.play().catch(error => {
@@ -200,19 +196,16 @@ export const useSimpleAudio = ({
     
     setState(prev => {
       const nextIndex = prev.currentAyahIndex + 1;
-      console.log('goToNext - Moving to next ayah:', { currentIndex: prev.currentAyahIndex, nextIndex, totalAyahs: ayahsRef.current.length });
       if (nextIndex < ayahsRef.current.length) {
         currentAyahIndexRef.current = nextIndex;
         onAyahChangeRef.current?.(nextIndex);
         return { ...prev, currentAyahIndex: nextIndex, isPaused: false, pauseCountdown: 0 };
       } else if (autoRepeatRef.current) {
-        console.log('goToNext - Auto-repeat enabled, resetting to 0');
         currentAyahIndexRef.current = 0;
         onAyahChangeRef.current?.(0);
         return { ...prev, currentAyahIndex: 0, isPaused: false, pauseCountdown: 0 };
       } else {
         // Session completed - stop auto-play
-        console.log('goToNext - Session completed');
         shouldAutoPlayRef.current = false;
         onSessionCompleteRef.current?.();
         return { ...prev, sessionCompleted: true, isPlaying: false, isPaused: false, pauseCountdown: 0 };
@@ -281,7 +274,6 @@ export const useSimpleAudio = ({
         
         // Auto-play if we should continue playing
         if (shouldAutoPlayRef.current && audio.src) {
-          console.log('Auto-playing next ayah after load');
           audio.play().catch(error => {
             console.error('Auto-play failed:', error);
             setState(prev => ({ 
@@ -349,26 +341,21 @@ export const useSimpleAudio = ({
           setState(prev => {
             // If auto-repeat ayah is enabled, repeat the current ayah
             if (autoRepeatAyahRef.current) {
-              console.log('onEnded (no pause) - Auto-repeat ayah enabled, repeating current ayah:', prev.currentAyahIndex);
-              // Trigger a reload of the same ayah
               setReloadTrigger(t => t + 1);
               return { ...prev, isPaused: false, pauseCountdown: 0 };
             }
             
             const nextIndex = prev.currentAyahIndex + 1;
-            console.log('onEnded (no pause) - Moving to next ayah immediately:', { currentIndex: prev.currentAyahIndex, nextIndex, totalAyahs: ayahsRef.current.length });
             if (nextIndex < ayahsRef.current.length) {
               currentAyahIndexRef.current = nextIndex;
               onAyahChangeRef.current?.(nextIndex);
               return { ...prev, currentAyahIndex: nextIndex, isPaused: false, pauseCountdown: 0 };
             } else if (autoRepeatRef.current) {
-              console.log('onEnded (no pause) - Auto-repeat surah enabled, resetting to 0');
               currentAyahIndexRef.current = 0;
               onAyahChangeRef.current?.(0);
               return { ...prev, currentAyahIndex: 0, isPaused: false, pauseCountdown: 0 };
             } else {
               // Surah completed - advance to next surah
-              console.log('onEnded (no pause) - Surah completed, advancing to next surah');
               onSurahCompleteRef.current?.();
               return { ...prev, isPaused: false, pauseCountdown: 0 };
             }
@@ -412,26 +399,21 @@ export const useSimpleAudio = ({
           setState(prev => {
             // If auto-repeat ayah is enabled, repeat the current ayah
             if (autoRepeatAyahRef.current) {
-              console.log('onEnded auto-advance - Auto-repeat ayah enabled, repeating current ayah:', prev.currentAyahIndex);
-              // Trigger a reload of the same ayah
               setReloadTrigger(t => t + 1);
               return { ...prev, isPaused: false, pauseCountdown: 0 };
             }
             
             const nextIndex = prev.currentAyahIndex + 1;
-            console.log('onEnded auto-advance - Moving to next ayah:', { currentIndex: prev.currentAyahIndex, nextIndex, totalAyahs: ayahsRef.current.length });
             if (nextIndex < ayahsRef.current.length) {
               currentAyahIndexRef.current = nextIndex;
               onAyahChangeRef.current?.(nextIndex);
               return { ...prev, currentAyahIndex: nextIndex, isPaused: false, pauseCountdown: 0 };
             } else if (autoRepeatRef.current) {
-              console.log('onEnded auto-advance - Auto-repeat surah enabled, resetting to 0');
               currentAyahIndexRef.current = 0;
               onAyahChangeRef.current?.(0);
               return { ...prev, currentAyahIndex: 0, isPaused: false, pauseCountdown: 0 };
             } else {
               // Surah completed - advance to next surah
-              console.log('onEnded auto-advance - Surah completed, advancing to next surah');
               onSurahCompleteRef.current?.();
               return { ...prev, isPaused: false, pauseCountdown: 0 };
             }
@@ -485,12 +467,6 @@ export const useSimpleAudio = ({
 
   // Load ayah when index changes OR when ayahs first become available
   useEffect(() => {
-    console.log('Load effect triggered:', { 
-      ayahsLength: ayahs.length, 
-      currentIndex: state.currentAyahIndex,
-      hasAudioRef: !!audioRef.current 
-    });
-    
     if (ayahs.length > 0) {
       loadCurrentAyah();
     }

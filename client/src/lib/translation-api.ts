@@ -22,7 +22,6 @@ export const getAyahTranslation = async (surahId: number, ayahNumber: number): P
     
     if (quranApiResponse.ok) {
       const quranApiData = await quranApiResponse.json();
-      console.log('QuranAPI.pages.dev translation response:', quranApiData);
       
       if (quranApiData.text) {
         return quranApiData.text;

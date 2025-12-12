@@ -66,16 +66,6 @@ export default function Home() {
     );
   }, [allAyahs, startAyah, endAyah]);
 
-  console.log('Ayah loading debug:', { 
-    selectedSurah, 
-    allAyahsCount: allAyahs.length, 
-    selectedAyahsCount: selectedAyahs.length,
-    startAyah,
-    endAyah,
-    ayahsLoading,
-    ayahsError
-  });
-
   // Update preferences mutation
   const updatePreferencesMutation = useMutation({
     mutationFn: (data: Partial<UserPreferences>) =>
@@ -196,7 +186,6 @@ export default function Home() {
       // When current surah ends, automatically advance to next surah
       if (selectedSurah < 114) {
         const nextSurah = selectedSurah + 1;
-        console.log('Surah completed, advancing to next surah:', nextSurah);
         
         // Stop playback temporarily to prevent race conditions
         audioPlayer.pause();
@@ -218,8 +207,6 @@ export default function Home() {
         }, 100);
       } else {
         // Reached the end of the Quran
-        console.log('Completed entire Quran!');
-        
         // Complete the session
         if (currentSessionIdRef.current && sessionStartTimeRef.current) {
           const sessionTime = Math.floor((Date.now() - sessionStartTimeRef.current.getTime()) / 1000);
