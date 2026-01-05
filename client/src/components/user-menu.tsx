@@ -13,11 +13,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User, LogOut, History, Heart, Users, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export function UserMenu() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -25,17 +27,17 @@ export function UserMenu() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      queryClient.clear(); // Clear all cached data on logout
+      queryClient.clear();
       toast({
-        title: "Logged out",
-        description: "You have been successfully logged out.",
+        title: t("loggedOut"),
+        description: t("successfullyLoggedOut"),
       });
       setLocation("/login");
     },
     onError: (error: Error) => {
       toast({
         variant: "destructive",
-        title: "Logout failed",
+        title: t("logoutFailed"),
         description: error.message,
       });
     },
@@ -54,12 +56,12 @@ export function UserMenu() {
       <div className="flex items-center gap-2">
         <Link href="/login">
           <Button variant="ghost" size="sm" data-testid="button-login">
-            Sign In
+            {t("signIn")}
           </Button>
         </Link>
         <Link href="/signup">
           <Button size="sm" data-testid="button-signup">
-            Sign Up
+            {t("signUp")}
           </Button>
         </Link>
       </div>
@@ -89,25 +91,25 @@ export function UserMenu() {
         <Link href="/my-communities">
           <DropdownMenuItem className="cursor-pointer" data-testid="menu-my-communities">
             <Users className="mr-2 h-4 w-4" />
-            <span>My Communities</span>
+            <span>{t("myCommunities")}</span>
           </DropdownMenuItem>
         </Link>
         <Link href="/history">
           <DropdownMenuItem className="cursor-pointer" data-testid="menu-history">
             <History className="mr-2 h-4 w-4" />
-            <span>Listening History</span>
+            <span>{t("listeningHistoryMenu")}</span>
           </DropdownMenuItem>
         </Link>
         <Link href="/bookmarks">
           <DropdownMenuItem className="cursor-pointer" data-testid="menu-bookmarks">
             <Heart className="mr-2 h-4 w-4" />
-            <span>Bookmarks</span>
+            <span>{t("bookmarks")}</span>
           </DropdownMenuItem>
         </Link>
         <Link href="/settings">
           <DropdownMenuItem className="cursor-pointer" data-testid="menu-settings">
             <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
+            <span>{t("settings")}</span>
           </DropdownMenuItem>
         </Link>
         <DropdownMenuSeparator />
@@ -118,7 +120,7 @@ export function UserMenu() {
           data-testid="menu-logout"
         >
           <LogOut className="mr-2 h-4 w-4" />
-          <span>{logoutMutation.isPending ? "Logging out..." : "Log Out"}</span>
+          <span>{logoutMutation.isPending ? t("signingOut") : t("signOut")}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

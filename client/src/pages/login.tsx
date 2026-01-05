@@ -11,17 +11,19 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { BookOpen } from "lucide-react";
 import { Link } from "wouter";
-
-const loginSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useLanguage();
+
+  const loginSchema = z.object({
+    username: z.string().min(3, t("usernameMinLength")),
+    password: z.string().min(6, t("passwordMinLength")),
+  });
+
+  type LoginFormData = z.infer<typeof loginSchema>;
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -38,16 +40,16 @@ export default function Login() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast({
-        title: "Welcome back!",
-        description: "Successfully logged in.",
+        title: t("welcomeBack"),
+        description: t("successfullyLoggedIn"),
       });
       setLocation("/");
     },
     onError: (error: Error) => {
       toast({
         variant: "destructive",
-        title: "Login failed",
-        description: error.message || "Invalid username or password",
+        title: t("loginFailed"),
+        description: error.message || t("invalidCredentials"),
       });
     },
   });
@@ -66,9 +68,9 @@ export default function Login() {
             </div>
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold">Tilawah Assistant</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t("appTitle")}</CardTitle>
             <CardDescription className="text-base mt-2">
-              Sign in to your account
+              {t("signInToAccount")}
             </CardDescription>
           </div>
         </CardHeader>
@@ -80,11 +82,11 @@ export default function Login() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>{t("username")}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Enter your username"
+                        placeholder={t("enterUsername")}
                         autoComplete="username"
                         data-testid="input-username"
                       />
@@ -99,12 +101,12 @@ export default function Login() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t("password")}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         type="password"
-                        placeholder="Enter your password"
+                        placeholder={t("enterPassword")}
                         autoComplete="current-password"
                         data-testid="input-password"
                       />
@@ -120,13 +122,13 @@ export default function Login() {
                 disabled={loginMutation.isPending}
                 data-testid="button-login"
               >
-                {loginMutation.isPending ? "Signing in..." : "Sign In"}
+                {loginMutation.isPending ? t("signingIn") : t("signIn")}
               </Button>
 
               <div className="text-center text-sm text-muted-foreground">
-                Don't have an account?{" "}
+                {t("dontHaveAccount")}{" "}
                 <Link href="/signup" className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium" data-testid="link-signup">
-                  Sign up
+                  {t("signUp")}
                 </Link>
               </div>
             </form>

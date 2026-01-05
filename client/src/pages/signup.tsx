@@ -11,23 +11,25 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { BookOpen } from "lucide-react";
 import { Link } from "wouter";
-
-const signupSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  email: z.string().email("Invalid email address").optional().or(z.literal("")),
-  displayName: z.string().min(2, "Display name must be at least 2 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
-
-type SignupFormData = z.infer<typeof signupSchema>;
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function Signup() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useLanguage();
+
+  const signupSchema = z.object({
+    username: z.string().min(3, t("usernameMinLength")),
+    email: z.string().email(t("invalidEmail")).optional().or(z.literal("")),
+    displayName: z.string().min(2, t("displayNameMinLength")),
+    password: z.string().min(6, t("passwordMinLength")),
+    confirmPassword: z.string(),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: t("passwordsDontMatch"),
+    path: ["confirmPassword"],
+  });
+
+  type SignupFormData = z.infer<typeof signupSchema>;
 
   const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -48,16 +50,16 @@ export default function Signup() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast({
-        title: "Welcome!",
-        description: "Account created successfully. You are now logged in.",
+        title: t("welcome"),
+        description: t("accountCreatedSuccess"),
       });
       setLocation("/");
     },
     onError: (error: Error) => {
       toast({
         variant: "destructive",
-        title: "Signup failed",
-        description: error.message || "Unable to create account",
+        title: t("signupFailed"),
+        description: error.message || t("unableToCreateAccount"),
       });
     },
   });
@@ -76,9 +78,9 @@ export default function Signup() {
             </div>
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold">Join Tilawah Assistant</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t("joinTilawah")}</CardTitle>
             <CardDescription className="text-base mt-2">
-              Create your account to start your Quran journey
+              {t("startQuranJourney")}
             </CardDescription>
           </div>
         </CardHeader>
@@ -90,11 +92,11 @@ export default function Signup() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>{t("username")}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Choose a username"
+                        placeholder={t("chooseUsername")}
                         autoComplete="username"
                         data-testid="input-username"
                       />
@@ -109,11 +111,11 @@ export default function Signup() {
                 name="displayName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Display Name</FormLabel>
+                    <FormLabel>{t("displayName")}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Your name"
+                        placeholder={t("yourName")}
                         autoComplete="name"
                         data-testid="input-displayname"
                       />
@@ -128,12 +130,12 @@ export default function Signup() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email (Optional)</FormLabel>
+                    <FormLabel>{t("emailOptional")}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         type="email"
-                        placeholder="your@email.com"
+                        placeholder={t("yourEmail")}
                         autoComplete="email"
                         data-testid="input-email"
                       />
@@ -148,12 +150,12 @@ export default function Signup() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t("password")}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         type="password"
-                        placeholder="Create a password"
+                        placeholder={t("createPassword")}
                         autoComplete="new-password"
                         data-testid="input-password"
                       />
@@ -168,12 +170,12 @@ export default function Signup() {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
+                    <FormLabel>{t("confirmPassword")}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         type="password"
-                        placeholder="Confirm your password"
+                        placeholder={t("confirmYourPassword")}
                         autoComplete="new-password"
                         data-testid="input-confirm-password"
                       />
@@ -189,13 +191,13 @@ export default function Signup() {
                 disabled={signupMutation.isPending}
                 data-testid="button-signup"
               >
-                {signupMutation.isPending ? "Creating account..." : "Create Account"}
+                {signupMutation.isPending ? t("creatingAccount") : t("createAccount")}
               </Button>
 
               <div className="text-center text-sm text-muted-foreground">
-                Already have an account?{" "}
+                {t("alreadyHaveAccount")}{" "}
                 <Link href="/login" className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium" data-testid="link-login">
-                  Sign in
+                  {t("signIn")}
                 </Link>
               </div>
             </form>
