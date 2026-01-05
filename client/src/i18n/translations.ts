@@ -216,6 +216,20 @@ export const translations = {
     invalidEmail: "Invalid email address",
     displayNameMinLength: "Display name must be at least 2 characters",
     passwordsDontMatch: "Passwords don't match",
+    
+    // History page (new keys only - others already exist)
+    dashboard: "Dashboard",
+    trackQuranProgress: "Track your Quran recitation progress",
+    ayahsPracticed: "Ayahs Practiced",
+    favoriteSurah: "Favorite Surah",
+    avg: "Avg",
+    acrossAllSessions: "Across all sessions",
+    mostPracticed: "Most practiced",
+    latestRecitationSessions: "Your latest Quran recitation practice sessions",
+    noSessionsYet: "No sessions yet",
+    startFirstSession: "Start your first recitation session to see your progress here",
+    none: "None",
+    backToPractice: "Back to Practice",
   },
   
   ar: {
@@ -435,6 +449,20 @@ export const translations = {
     invalidEmail: "بريد إلكتروني غير صالح",
     displayNameMinLength: "الاسم الظاهر يجب أن يكون حرفين على الأقل",
     passwordsDontMatch: "كلمات المرور غير متطابقة",
+    
+    // History page (new keys only - others already exist)
+    dashboard: "لوحة التحكم",
+    trackQuranProgress: "تتبع تقدمك في تلاوة القرآن",
+    ayahsPracticed: "الآيات المتدرب عليها",
+    favoriteSurah: "السورة المفضلة",
+    avg: "المتوسط",
+    acrossAllSessions: "عبر جميع الجلسات",
+    mostPracticed: "الأكثر تدريباً",
+    latestRecitationSessions: "جلسات التلاوة الأخيرة",
+    noSessionsYet: "لا توجد جلسات بعد",
+    startFirstSession: "ابدأ جلسة التلاوة الأولى لرؤية تقدمك هنا",
+    none: "لا يوجد",
+    backToPractice: "العودة للتدريب",
   }
 };
 

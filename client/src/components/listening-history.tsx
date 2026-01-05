@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Clock, Play, Calendar, TrendingUp, BookOpen, CheckCircle } from "lucide-react";
 import { formatTime } from "@/lib/quran-data";
 import type { RecitationSession } from "@shared/schema";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface ListeningHistoryProps {
   userId: number;
@@ -21,6 +22,9 @@ interface SessionStats {
 }
 
 export const ListeningHistory = ({ userId }: ListeningHistoryProps) => {
+  const { t, language } = useLanguage();
+  const isArabic = language === "ar";
+  
   const { data: sessions, isLoading } = useQuery<RecitationSession[]>({
     queryKey: ['/api/sessions', userId],
   });
@@ -39,7 +43,7 @@ export const ListeningHistory = ({ userId }: ListeningHistoryProps) => {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(isArabic ? 'ar-SA' : 'en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -58,52 +62,52 @@ export const ListeningHistory = ({ userId }: ListeningHistoryProps) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Sessions</CardTitle>
-              <Play className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">{t("favoriteSurah")}</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalSessions}</div>
+              <div className="text-lg font-bold">{stats.mostListenedSurah || t("none")}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.completedSessions} completed
+                {t("mostPracticed")}
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Time</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatTime(stats.totalTime)}</div>
-              <p className="text-xs text-muted-foreground">
-                Avg: {formatTime(stats.averageSessionTime)}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ayahs Practiced</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("ayahsPracticed")}</CardTitle>
               <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalAyahs}</div>
               <p className="text-xs text-muted-foreground">
-                Across all sessions
+                {t("acrossAllSessions")}
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Favorite Surah</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">{t("totalTime")}</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-lg font-bold">{stats.mostListenedSurah}</div>
+              <div className="text-2xl font-bold">{formatTime(stats.totalTime)}</div>
               <p className="text-xs text-muted-foreground">
-                Most practiced
+                {t("avg")}: {formatTime(stats.averageSessionTime)}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{t("totalSessions")}</CardTitle>
+              <Play className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalSessions}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.completedSessions} {t("completed")}
               </p>
             </CardContent>
           </Card>
@@ -115,10 +119,10 @@ export const ListeningHistory = ({ userId }: ListeningHistoryProps) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Recent Sessions
+            {t("recentSessions")}
           </CardTitle>
           <CardDescription>
-            Your latest Quran recitation practice sessions
+            {t("latestRecitationSessions")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -136,7 +140,7 @@ export const ListeningHistory = ({ userId }: ListeningHistoryProps) => {
                       <div>
                         <h4 className="font-semibold">{session.surahName}</h4>
                         <p className="text-sm text-muted-foreground">
-                          Ayahs {session.startAyah}-{session.endAyah}
+                          {t("ayahs")} {session.startAyah}-{session.endAyah}
                         </p>
                       </div>
                     </div>
@@ -154,7 +158,7 @@ export const ListeningHistory = ({ userId }: ListeningHistoryProps) => {
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {session.completedAyahs}/{session.endAyah - session.startAyah + 1} ayahs
+                        {session.completedAyahs}/{session.endAyah - session.startAyah + 1} {t("ayahs")}
                       </p>
                     </div>
                     
@@ -173,9 +177,9 @@ export const ListeningHistory = ({ userId }: ListeningHistoryProps) => {
           ) : (
             <div className="text-center py-8">
               <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No sessions yet</h3>
+              <h3 className="text-lg font-semibold mb-2">{t("noSessionsYet")}</h3>
               <p className="text-muted-foreground">
-                Start your first recitation session to see your progress here
+                {t("startFirstSession")}
               </p>
             </div>
           )}

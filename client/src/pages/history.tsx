@@ -1,21 +1,22 @@
-import { History as HistoryIcon } from "lucide-react";
+import { History as HistoryIcon, RotateCcw } from "lucide-react";
 import { PageLayout } from "@/components/page-layout";
 import { PageHeader } from "@/components/page-header";
 import { BackButton } from "@/components/back-button";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ListeningHistory } from "@/components/listening-history";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 
 export default function History() {
-  const { language } = useLanguage();
-  const isArabic = language === "ar";
+  const { t } = useLanguage();
   
   return (
     <>
       <Breadcrumb 
         items={[
-          { label: isArabic ? "لوحة التحكم" : "Dashboard", href: "/" },
-          { label: isArabic ? "السجل" : "History" }
+          { label: t("dashboard"), href: "/" },
+          { label: t("history") }
         ]}
       />
       
@@ -27,8 +28,16 @@ export default function History() {
           </>
         }
         icon={<HistoryIcon className="h-6 w-6 text-white" />}
-        title={isArabic ? "سجل الاستماع" : "Listening History"}
-        subtitle={isArabic ? "تتبع تقدمك في تلاوة القرآن" : "Track your Quran recitation progress"}
+        title={t("listeningHistory")}
+        subtitle={t("trackQuranProgress")}
+        actions={
+          <Link href="/recite">
+            <Button variant="outline" size="sm" className="flex items-center gap-2" data-testid="button-back-to-practice">
+              <RotateCcw className="h-4 w-4" />
+              {t("backToPractice")}
+            </Button>
+          </Link>
+        }
       />
       
       <PageLayout>
