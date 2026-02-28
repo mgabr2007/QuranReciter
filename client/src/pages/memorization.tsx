@@ -80,10 +80,10 @@ export default function MemorizationPage() {
   };
 
   const getMemorizationStatus = (count: number): { status: string; color: string; icon: string } => {
-    if (count === 0) return { status: "Not Started", color: "bg-gray-100 dark:bg-gray-700", icon: "⭕" };
-    if (count <= 2) return { status: "Learning", color: "bg-yellow-100 dark:bg-yellow-700", icon: "📚" };
-    if (count <= 4) return { status: "Memorizing", color: "bg-blue-100 dark:bg-blue-700", icon: "🧠" };
-    return { status: "Memorized", color: "bg-green-100 dark:bg-green-700", icon: "✅" };
+    if (count === 0) return { status: t("notStartedStatus"), color: "bg-gray-100 dark:bg-gray-700", icon: "⭕" };
+    if (count <= 2) return { status: t("learningStatus"), color: "bg-yellow-100 dark:bg-yellow-700", icon: "📚" };
+    if (count <= 4) return { status: t("memorizingStatus"), color: "bg-blue-100 dark:bg-blue-700", icon: "🧠" };
+    return { status: t("memorizedStatus"), color: "bg-green-100 dark:bg-green-700", icon: "✅" };
   };
 
   const selectedSurah = surahs.find(s => s.id === selectedSurahId);
@@ -119,8 +119,8 @@ export default function MemorizationPage() {
     <PageLayout>
       <Breadcrumb 
         items={[
-          { label: "Dashboard", href: "/" },
-          { label: "Analytics" }
+          { label: t("dashboard"), href: "/" },
+          { label: t("analytics") }
         ]}
       />
       
@@ -165,7 +165,7 @@ export default function MemorizationPage() {
               )}
               {heatmapError && (
                 <div className="text-center py-8 text-red-500 dark:text-red-400">
-                  {t('error')}: Failed to load heatmap data
+                  {t('error')}: {t('failedToLoadHeatmap')}
                 </div>
               )}
               {!heatmapLoading && !heatmapError && (
@@ -243,7 +243,7 @@ export default function MemorizationPage() {
               )}
               {calendarError && (
                 <div className="text-center py-4 text-red-500 dark:text-red-400">
-                  {t('error')}: Failed to load calendar data
+                  {t('error')}: {t('failedToLoadCalendar')}
                 </div>
               )}
               <div className="flex gap-2 mt-4">
@@ -276,7 +276,7 @@ export default function MemorizationPage() {
             <CardContent>
               {!calendarLoading && !calendarError && (
               <div className="grid grid-cols-7 gap-2">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                {[t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')].map(day => (
                   <div key={day} className="text-center text-sm font-medium text-gray-500 dark:text-gray-400">
                     {day}
                   </div>
@@ -319,7 +319,7 @@ export default function MemorizationPage() {
               )}
               {progressError && (
                 <div className="text-center py-4 text-red-500 dark:text-red-400">
-                  {t('error')}: Failed to load surah progress
+                  {t('error')}: {t('failedToLoadProgress')}
                 </div>
               )}
               <Select value={selectedSurahId.toString()} onValueChange={(val) => setSelectedSurahId(parseInt(val))}>
@@ -345,7 +345,7 @@ export default function MemorizationPage() {
                   {/* Overall Progress Bar */}
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Overall Memorization Progress</span>
+                      <span className="text-sm font-medium">{t('overallMemorizationProgress')}</span>
                       <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
                         {Math.round((surahProgress.filter(p => p.count > 0).length / selectedSurah.totalAyahs) * 100)}%
                       </span>
@@ -381,31 +381,31 @@ export default function MemorizationPage() {
 
                   <div className="pt-4 border-t space-y-4">
                     <div>
-                      <h3 className="font-semibold mb-3">Memorization Breakdown</h3>
+                      <h3 className="font-semibold mb-3">{t('memorizationBreakdown')}</h3>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                             {surahProgress.filter(p => p.count >= 5).length}
                           </div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">Memorized (5+)</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">{t('memorizedCount')}</div>
                         </div>
                         <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                             {surahProgress.filter(p => p.count >= 1 && p.count < 5).length}
                           </div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">Memorizing (1-4)</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">{t('memorizingCount')}</div>
                         </div>
                         <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
                           <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                             {surahProgress.filter(p => p.count > 0 && p.count < 1).length}
                           </div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">Learning</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">{t('learningStatus')}</div>
                         </div>
                         <div className="p-3 bg-gray-50 dark:bg-gray-900/20 rounded-lg">
                           <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
                             {selectedSurah.totalAyahs - surahProgress.filter(p => p.count > 0).length}
                           </div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">Not Started</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">{t('notStartedStatus')}</div>
                         </div>
                       </div>
                     </div>
@@ -460,7 +460,7 @@ export default function MemorizationPage() {
               )}
               {topError && (
                 <div className="text-center py-8 text-red-500 dark:text-red-400">
-                  {t('error')}: Failed to load top ayahs
+                  {t('error')}: {t('failedToLoadTopAyahs')}
                 </div>
               )}
               {!topLoading && !topError && (

@@ -220,7 +220,7 @@ export default function Home() {
         
         toast({
           title: t('sessionCompleted'),
-          description: 'Completed the entire Quran! Masha\'Allah!',
+          description: t('quranCompleted'),
         });
         
         currentSessionIdRef.current = null;
@@ -343,8 +343,8 @@ export default function Home() {
     <>
       <Breadcrumb 
         items={[
-          { label: "Dashboard", href: "/" },
-          { label: "Recite Quran" }
+          { label: t("dashboard"), href: "/" },
+          { label: t("reciteQuran") }
         ]}
       />
       
