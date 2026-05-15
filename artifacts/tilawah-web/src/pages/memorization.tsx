@@ -189,7 +189,7 @@ export default function MemorizationPage() {
                             <div
                               key={ayahNum}
                               className={`w-8 h-8 rounded flex items-center justify-center text-xs font-medium ${getColorForCount(count)} ${getTextColorForCount(count)} cursor-pointer hover:scale-110 transition-transform`}
-                              title={`Ayah ${ayahNum}: ${count} times${ayahData ? `, last: ${ayahData.lastPracticed}` : ''}`}
+                              title={`${t('ayah')} ${ayahNum}: ${count} ${t('times')}${ayahData ? `, ${t('last')}: ${ayahData.lastPracticed}` : ''}`}
                               data-testid={`heatmap-cell-${surah.id}-${ayahNum}`}
                             >
                               {ayahNum}
@@ -293,7 +293,7 @@ export default function MemorizationPage() {
                     <div
                       key={day}
                       className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm font-medium ${getColorForCount(count)} ${getTextColorForCount(count)} cursor-pointer hover:scale-105 transition-transform`}
-                      title={`${count} ayahs practiced, ${minutes} minutes`}
+                      title={`${count} ${t('ayahs')} ${t('practiced')}, ${minutes} ${t('minutes')}`}
                       data-testid={`calendar-day-${day}`}
                     >
                       <div>{day}</div>
@@ -368,7 +368,7 @@ export default function MemorizationPage() {
                         <div
                           key={ayahNum}
                           className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center text-xs font-medium ${getColorForCount(count)} ${getTextColorForCount(count)} cursor-pointer hover:scale-110 transition-transform relative group`}
-                          title={`Ayah ${ayahNum}: ${count} times - ${status.status}${ayahData ? `, last: ${ayahData.lastPracticed}` : ''}`}
+                          title={`${t('ayah')} ${ayahNum}: ${count} ${t('times')} - ${status.status}${ayahData ? `, ${t('last')}: ${ayahData.lastPracticed}` : ''}`}
                           data-testid={`progress-cell-${ayahNum}`}
                         >
                           <div>{ayahNum}</div>

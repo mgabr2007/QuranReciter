@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/tilawah-mobile/"
+title = "Tilawah Mobile"
+version = "1.0.0"
+id = "artifacts/tilawah-mobile"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/tilawah-mobile/" ]
+localPort = 18960
+
+[services.development]
+run = "pnpm --filter @workspace/tilawah-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/tilawah-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/tilawah-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "18960"
+BASE_PATH = "/tilawah-mobile/"

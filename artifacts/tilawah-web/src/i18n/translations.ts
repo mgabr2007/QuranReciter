@@ -299,6 +299,10 @@ export const translations = {
     // Not Found page
     pageNotFound: "404 Page Not Found",
     pageNotFoundDesc: "The page you are looking for does not exist.",
+
+    // Tooltip strings
+    last: "last",
+    practiced: "practiced",
   },
   
   ar: {
@@ -601,6 +605,10 @@ export const translations = {
     // Not Found page
     pageNotFound: "الصفحة غير موجودة - 404",
     pageNotFoundDesc: "الصفحة التي تبحث عنها غير موجودة.",
+
+    // Tooltip strings
+    last: "آخر مرة",
+    practiced: "مُمارَس",
   }
 };
 
