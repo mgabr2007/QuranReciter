@@ -74,6 +74,7 @@ export default function ReciteScreen() {
   const pauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPlayingRef = useRef(false);
   const currentIndexRef = useRef(0);
+  const sessionStartTimeRef = useRef<number | null>(null);
 
   // Derived: ayahs within the selected range
   const rangeAyahs = allAyahs.filter(
@@ -131,9 +132,60 @@ export default function ReciteScreen() {
       } catch {}
       soundRef.current = null;
     }
+    sessionStartTimeRef.current = null;
     setIsPlaying(false);
     setIsLoading(false);
   }, []);
+
+  const saveSession = useCallback(
+    async (completedAyahs: number, isCompleted: boolean) => {
+      if (!selectedSurah) return;
+      const elapsedSeconds = sessionStartTimeRef.current
+        ? Math.round((Date.now() - sessionStartTimeRef.current) / 1000)
+        : 0;
+      try {
+        await fetch(`${baseUrl}/api/sessions`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            surahId: selectedSurah.id,
+            surahName: selectedSurah.nameEnglish ?? selectedSurah.name,
+            startAyah,
+            endAyah,
+            completedAyahs,
+            sessionTime: elapsedSeconds,
+            pauseDuration,
+            isCompleted,
+            reciterName: "Al-Afasy",
+          }),
+        });
+      } catch {}
+    },
+    [selectedSurah, baseUrl, startAyah, endAyah, pauseDuration]
+  );
+
+  const handleBookmark = useCallback(async () => {
+    const ayah = rangeAyahs[currentAyahIndex];
+    if (!ayah || !selectedSurah) return;
+    try {
+      const res = await fetch(`${baseUrl}/api/bookmarks`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          surahId: selectedSurah.id,
+          ayahNumber: ayah.number,
+        }),
+      });
+      if (res.ok) {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert("", t("bookmark"));
+      } else if (res.status === 401) {
+        Alert.alert("", t("signInToAccount"));
+      }
+    } catch {}
+  }, [rangeAyahs, currentAyahIndex, selectedSurah, baseUrl, t]);
 
   const playAyah = useCallback(
     async (index: number) => {
@@ -146,6 +198,11 @@ export default function ReciteScreen() {
       if (soundRef.current) {
         try { await soundRef.current.unloadAsync(); } catch {}
         soundRef.current = null;
+      }
+
+      // Start session timer on first ayah
+      if (index === 0 || sessionStartTimeRef.current === null) {
+        sessionStartTimeRef.current = Date.now();
       }
 
       const ayah = rangeAyahs[index];
@@ -187,6 +244,8 @@ export default function ReciteScreen() {
             } else {
               setIsPlaying(false);
               setCompletedCount((c) => c + 1);
+              saveSession(rangeAyahs.length, true);
+              sessionStartTimeRef.current = null;
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               Alert.alert("", t("sessionCompleted"));
             }
@@ -199,7 +258,7 @@ export default function ReciteScreen() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rangeAyahs, selectedSurah, baseUrl, pauseDuration, autoRepeat, t]
+    [rangeAyahs, selectedSurah, baseUrl, pauseDuration, autoRepeat, t, saveSession]
   );
 
   const handlePlay = useCallback(async () => {
@@ -474,6 +533,20 @@ export default function ReciteScreen() {
                 >
                   {currentAyahIndex + 1} / {rangeAyahs.length}
                 </Text>
+                <Pressable
+                  onPress={handleBookmark}
+                  hitSlop={8}
+                  style={({ pressed }) => [
+                    styles.bookmarkBtn,
+                    { opacity: pressed ? 0.6 : 1 },
+                  ]}
+                >
+                  <Ionicons
+                    name="bookmark-outline"
+                    size={20}
+                    color={colors.islamicGreen}
+                  />
+                </Pressable>
               </View>
 
               {/* Arabic Text */}
@@ -871,6 +944,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  bookmarkBtn: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
   },
   ayahBadge: {
     width: 32,
