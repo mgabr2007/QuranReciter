@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 18,
     color: "rgba(255,255,255,0.7)",
-    fontFamily: "Amiri_400Regular",
+    fontFamily: "AmiriQuran",
   },
   signInCard: {
     flexDirection: "row",

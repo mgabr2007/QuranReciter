@@ -886,7 +886,7 @@ const styles = StyleSheet.create({
     textAlign: "right",
     writingDirection: "rtl",
     lineHeight: 52,
-    fontFamily: "Amiri_400Regular",
+    fontFamily: "AmiriQuran",
   },
   translationBox: { padding: 12 },
   translationText: { fontSize: 14, lineHeight: 22 },
@@ -901,7 +901,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   emptyAyah: { alignItems: "center", paddingVertical: 16, gap: 8 },
-  arabicPlaceholder: { fontSize: 40, fontFamily: "Amiri_400Regular" },
+  arabicPlaceholder: { fontSize: 40, fontFamily: "AmiriQuran" },
   emptyText: { fontSize: 14, textAlign: "center" },
   errorBox: {
     flexDirection: "row",

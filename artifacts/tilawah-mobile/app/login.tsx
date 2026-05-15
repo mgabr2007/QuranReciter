@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "rgba(255,255,255,0.7)",
     fontSize: 18,
-    fontFamily: "Amiri_400Regular",
+    fontFamily: "AmiriQuran",
   },
   rtlText: {
     textAlign: "right",

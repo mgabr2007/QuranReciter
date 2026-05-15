@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     textAlign: "right",
     writingDirection: "rtl",
     lineHeight: 44,
-    fontFamily: "Amiri_400Regular",
+    fontFamily: "AmiriQuran",
   },
   translationText: {
     fontSize: 13,
