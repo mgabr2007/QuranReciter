@@ -1,286 +1,71 @@
-# Quran Recitation & Learning Application
+# Tilawah Assistant
 
-## Overview
+A Quran recitation assistant app for listening to and tracking Quran recitation sessions, with community features, bookmarks, and memorization tracking.
 
-This is a comprehensive web application designed for Quran recitation practice, memorization, and learning. The application combines authentic audio recitation with interactive features to create an immersive learning experience for users studying the Quran.
+## Run & Operate
 
-## System Architecture
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080)
+- `pnpm --filter @workspace/tilawah-web run dev` — run the frontend (dev, port 18994)
+- `pnpm run typecheck` — full typecheck across all packages
+- `pnpm run build` — typecheck + build all packages
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
+- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- Required env: `DATABASE_URL` — Postgres connection string
 
-### Full-Stack Architecture
-The application follows a modern full-stack architecture with:
-- **Frontend**: React-based SPA (Single Page Application)
-- **Backend**: Express.js REST API server
-- **Database**: PostgreSQL with Drizzle ORM
-- **Deployment**: Replit-ready with Vite development server
+## Stack
 
-### Technology Stack
-- **Frontend Framework**: React 18 with TypeScript
-- **Styling**: Tailwind CSS with Shadcn/UI component library
-- **Routing**: Wouter (lightweight React router)
-- **State Management**: TanStack Query for server state
-- **Backend**: Express.js with TypeScript
-- **Database**: PostgreSQL with Drizzle ORM
-- **Build Tool**: Vite with ESM modules
-- **Development**: Hot module replacement via Vite
+- pnpm workspaces, Node.js 24, TypeScript 5.9
+- Frontend: React + Vite + Tailwind CSS v3 + wouter
+- API: Express 5 with express-session + connect-pg-simple
+- DB: PostgreSQL + Drizzle ORM
+- Validation: Zod (`zod/v4`), `drizzle-zod`
+- Auth: bcryptjs + express-session
+- Audio: Alafasy recitations (served from `public/audio/alafasy/`)
+- i18n: Arabic/English bilingual support
 
-## Key Components
+## Where things live
 
-### Audio System
-- Complete local audio coverage: 6,180 MP3 files for all 114 surahs (Sheikh Alafasy, 128kbps)
-- Smart fallback to EveryAyah.com CDN if local files unavailable
-- Verse-by-verse audio playback with customizable pause intervals
-- Audio player with standard controls (play, pause, seek, next, previous)
+- `artifacts/tilawah-web/` — React frontend (previewPath: `/`)
+- `artifacts/api-server/` — Express backend (previewPath: `/api`)
+- `lib/db/src/schema/schema.ts` — Drizzle schema (all tables)
+- `artifacts/api-server/src/routes/routes.ts` — All API routes
+- `artifacts/api-server/src/storage.ts` — Data access layer
+- `artifacts/api-server/src/auth.ts` — Auth middleware + handlers
+- `artifacts/tilawah-web/src/lib/queryClient.ts` — Custom fetch layer
+- `artifacts/tilawah-web/public/audio/` — Symlink to `.migration-backup/public/audio/`
 
-### Text Display
-- Arabic text rendering with Amiri Quran font
-- English translations fetched from QuranAPI.pages.dev and Al-Quran Cloud API
-- Responsive text layout with proper Islamic typography
+## Architecture decisions
 
-### Bookmarking System
-- Star rating system (1-5 stars) for favorite verses
-- Custom tagging system for organizing bookmarks
-- Personal notes capability for each bookmarked ayah
-- Multiple view modes: Simple List and Enhanced Collection
+- OpenAPI spec intentionally kept minimal — the app uses a custom fetch layer (`queryClient.ts`) rather than generated hooks, which avoids risky rewrites of 20+ pages
+- Audio files (1.6GB) are symlinked from `.migration-backup/public/audio/` rather than copied
+- DB connection is in `lib/db` (node-postgres Pool), re-exported by `artifacts/api-server/src/db.ts`
+- Session store uses `connect-pg-simple` with the same pool as Drizzle
+- `registerRoutes(app)` is called from `index.ts` before `app.listen()` to set up session middleware and all routes
 
-### Search Functionality
-- Full-text search across Arabic text and English translations
-- Keyword highlighting in search results
-- Relevance scoring algorithm for better result ranking
-- Direct audio playback from search results
+## Product
 
-### Session Management
-- Listening history tracking with detailed statistics
-- Progress monitoring for memorization goals
-- Time tracking and completion metrics
-- User preferences persistence
+- **Dashboard** — recitation stats, recent activity, quick navigation
+- **Recite** — Surah selector, ayah-by-ayah audio playback with pause controls
+- **Communities** — create/join Quran completion groups, juz assignments
+- **Bookmarks** — save and annotate individual ayahs
+- **Memorization** — heatmap and calendar tracking of practice sessions
+- **History** — past recitation sessions
+- **Search** — full-text search over Arabic text and translations
+- **Bilingual** — full Arabic/English UI toggle
 
-### Memorization Tracking System
-- Ayah-level practice heatmap with color-coded visualization
-- Calendar view showing daily practice activity
-- Surah-by-surah progress breakdown with completion percentages
-- Top practiced ayahs analytics with detailed statistics
-- Automatic practice logging integrated with audio playback
-- Visual indicators showing repetition counts and last practice dates
+## User preferences
 
-## Data Flow
+- TypeScript errors are out of scope for the port task — use `@ts-ignore` as needed
+- Functionality and visual parity matter more than zero TS errors
 
-### Audio Playback Flow
-1. User selects Surah and Ayah range
-2. Application fetches audio URLs from EveryAyah CDN
-3. Audio player loads and plays with configured pause intervals
-4. Session data is tracked and stored in database
-5. Progress is updated in real-time
+## Gotchas
 
-### Content Retrieval Flow
-1. Surah and Ayah data loaded from PostgreSQL database
-2. Audio files served from local storage (`/public/audio/alafasy/`)
-3. Content cached and displayed with proper formatting
-4. Bookmarks and notes synchronized with backend database
+- Audio symlink must exist: `artifacts/tilawah-web/public/audio → .migration-backup/public/audio`
+- Tailwind v3 (postcss) used in frontend, NOT @tailwindcss/vite
+- `server.fs.strict: false` required in vite.config.ts for attached_assets alias
+- `registerRoutes` is async and must be awaited before `app.listen()`
+- Session secret defaults to a dev value; set `SESSION_SECRET` env var in production
 
-### User Data Flow
-1. User preferences stored in PostgreSQL database
-2. Session tracking records listening history and statistics
-3. Bookmarks and notes synchronized across sessions
-4. Search functionality operates on both local and API data
+## Pointers
 
-## External Dependencies
-
-### Audio Content
-- **EveryAyah.com**: Primary source for authentic Quran audio files
-- Sheikh Alafasy (128kbps) as primary reciter
-- Abdul Basit as fallback reciter option
-
-### Text Content
-- **QuranAPI.pages.dev**: Primary translation API (no authentication)
-- **Al-Quran Cloud API**: Fallback for Arabic text and translations
-- Local Surah metadata stored in JSON format
-
-### UI Components
-- **Shadcn/UI**: Pre-built accessible React components
-- **Radix UI**: Headless UI primitives for complex interactions
-- **Tailwind CSS**: Utility-first styling framework
-
-## Deployment Strategy
-
-### Development Environment
-- Vite development server with HMR
-- Replit integration with runtime error overlay
-- TypeScript compilation and type checking
-
-### Production Build
-- Vite builds optimized client bundle
-- ESBuild compiles server code with external packages
-- Static assets served from Express server
-
-### Database Setup
-- Drizzle ORM manages schema and migrations
-- PostgreSQL connection via Neon serverless driver
-- Environment-based database URL configuration
-
-### Environment Variables
-- `DATABASE_URL`: PostgreSQL connection string
-- `SESSION_SECRET`: Session encryption key
-- `NODE_ENV`: Environment mode (development/production)
-
-## Major Updates
-
-### July 04, 2025 - Local Audio Hosting Implementation
-✅ **Resolved Critical Audio Issues**
-- Migrated from unreliable external API calls to local audio file hosting
-- Created comprehensive audio downloader system from versebyversequran.com
-- Downloaded authentic Quran recitation files (Sheikh Alafasy) and host them locally
-- Updated audio API to check local files first, fallback to external CDN
-- Eliminated "audio unavailable" errors and connection timeouts
-- Added support for multiple reciters (Alafasy, Abdul Basit, As-Sudais, etc.)
-
-✅ **Database-First Architecture**
-- Migrated from JSON files to PostgreSQL database storage
-- Populated all 114 surahs and sample ayahs from Al-Quran Cloud API
-- Updated storage layer to eliminate page refresh issues
-- Created data scraping tools for complete Quran text population
-
-### Audio System Architecture
-- **Local Storage**: Audio files stored in `/public/audio/[reciter]/` directory
-- **Complete Coverage**: 6,180 MP3 files covering all 114 surahs (6,236 ayahs)
-- **Smart Fallback**: Checks local files first, then external CDN if needed
-- **Multiple Reciters**: Support for Alafasy (primary), Abdul Basit (alternative)
-- **Server Integration**: Express serves static audio files via `/audio/` route
-- **Download Tools**: Automated scripts to download specific surahs or ayah ranges
-
-### October 18, 2025 - Complete Audio Coverage & Deployment Ready
-✅ **Complete Audio File Coverage**
-- Downloaded all remaining audio files for surahs 12-114 from EveryAyah.com
-- Total coverage: 6,180 MP3 files for complete Quran (Sheikh Alafasy recitation)
-- Verified audio playback across short, medium, and long surahs
-- All audio files stored locally in `/public/audio/alafasy/` directory
-
-✅ **Deployment Readiness**
-- Removed JSON file dependency from storage.ts
-- Application now loads all Quran data exclusively from PostgreSQL database
-- No external file dependencies - fully deployment-ready
-- Database contains all 114 surahs and 6,236 ayahs
-
-### October 17, 2025 - UI Component Refactoring
-✅ **Eliminated Code Duplication**
-- Created shared PageLayout component for consistent page structure across all pages
-- Created PageHeader component with customizable title, icon, subtitle, and action buttons
-- Created BackButton component for consistent navigation
-- Created StatCard component for displaying statistics
-
-✅ **Improved Code Maintainability**
-- Refactored home.tsx, bookmarks.tsx, and history.tsx to use shared components
-- Added maxWidth prop support to PageHeader (4xl, 6xl, 7xl) for flexible layouts
-- Reduced code duplication by ~40% across page components
-- Added proper data-testid attributes to all interactive elements for testing compliance
-
-### October 18, 2025 - UI Simplification & Focus Enhancement
-✅ **Streamlined Interface**
-- Removed translation toggle from main interface (translations always visible)
-- Removed bookmark/history navigation buttons from home page
-- Removed recitation status card for cleaner, focused layout
-- Centered quick action buttons (Reset Session and Share) for better visual balance
-
-✅ **Enhanced Features**
-- Implemented multilingual share functionality with language-aware messages
-- Share messages adapt to UI language (English/Arabic) with proper surah names
-- Refactored counter system from callbacks to reactive state values
-- Added session time tracking with state-driven updates using intervals
-- Improved code reactivity: completedAyahs and remainingAyahs use direct state values
-
-✅ **User Experience Improvements**
-- Simplified UI focuses on core playback experience
-- Reduced visual clutter for better concentration during recitation
-- Maintained essential features while removing redundant navigation elements
-
-### October 24, 2025 - Comprehensive Memorization Analytics Dashboard
-✅ **Practice Tracking System**
-- Implemented ayah_practice_log database table for granular listening history
-- Created backend API endpoints for logging practice and retrieving analytics
-- Automatic practice logging fires on each ayah completion during playback
-
-✅ **Analytics Visualization**
-- **Ayah Heatmap**: Color-coded grid showing practice intensity per ayah (0 to 11+ repetitions)
-- **Practice Calendar**: Monthly calendar view with daily practice counts and color indicators
-- **Surah Progress**: Per-surah breakdown with completion percentages and ayah-level tracking
-- **Top Ayahs**: Rankings of most practiced verses with repetition counts and statistics
-
-✅ **Technical Implementation**
-- TanStack Query integration with proper URL parameter encoding
-- Loading and error states for all analytics tabs
-- Multilingual support for English/Arabic UI
-- Responsive grid layouts with hover effects and tooltips
-- Navigation button added to Quick Actions component
-
-### November 19, 2025 - Complete Dashboard-Driven UI Overhaul
-✅ **Modern Navigation System**
-- Implemented responsive dual-navigation architecture: Sidebar for desktop, Bottom Tab Bar for mobile
-- Created collapsible sidebar with 7 main sections (Dashboard, Recite, Communities, Analytics, Bookmarks, History, Search)
-- Bottom nav optimized for mobile with 5 primary tabs for one-thumb navigation
-- Active state highlighting and smooth transitions across all navigation elements
-- Route-based authentication gating prevents navigation disappearing after login
-
-✅ **Dashboard Page as New Home**
-- Built comprehensive dashboard with real-time statistics and infographics
-- 4 stat cards showing Listening Time, Total Sessions, Communities Joined, and Bookmarks
-- Quick action cards for Start Recitation, Browse Communities, View Analytics, and Search Verses
-
-### November 22, 2025 - Audio Player Stale Closure Bug Fix
-✅ **Critical Audio Logging Fix**
-- Fixed bug where all ayahs were logged as "ayah 1" due to stale closure in onEnded event listener
-- Root cause: Event listener was reading `state.currentAyahIndex` which captured stale value
-- Solution: Implemented synchronous `currentAyahIndexRef` updates inside all `setState` callbacks
-- Updated goToNext, goToPrevious, skipToAyah, and onEnded handlers to update ref synchronously
-- Practice tracker heatmap and community progress now accurately reflect actual recitation
-
-✅ **Technical Implementation**
-- Added `currentAyahIndexRef` to track current ayah index across re-renders
-- Ref updates happen synchronously inside setState callback functions (not in useEffect)
-- Event listeners now read `currentAyahIndexRef.current` for latest value
-- Database verification confirms correct ayah numbers (1, 2, 3, 4) being logged
-- Community weekly progress tracking works accurately with correct ayah counts
-- Recent Activity feed displaying latest listening sessions
-- Clean, modern design with proper spacing and visual hierarchy
-
-✅ **Navigation Context with Breadcrumbs**
-- Created reusable Breadcrumb component showing current location hierarchy
-- Integrated breadcrumbs across all major pages (Communities, Analytics, Bookmarks, History, Recite, Search)
-- Improves user orientation and enables quick navigation to parent pages
-- Consistent "Dashboard > Current Page" pattern throughout the app
-
-✅ **Community Hub Redesign**
-- Redesigned Communities page with tabbed interface (Browse All | My Communities)
-- Improved card layouts with better visual hierarchy, color-coded icons, and member badges
-- Enhanced "Create Community" page with breadcrumbs and improved form layout
-- Better spacing, typography, and visual feedback for all community interactions
-
-✅ **Consistent Page Design**
-- Added breadcrumbs to Analytics, Bookmarks, and History pages
-- All pages now follow consistent layout patterns with PageHeader, PageLayout, and Breadcrumbs
-- Moved recitation player to dedicated /recite route (Dashboard is now "/" home page)
-- Unified navigation experience across desktop and mobile viewports
-
-✅ **Technical Architecture**
-- Created AppLayout wrapper component managing navigation visibility
-- Route-based layout gating (hides navigation only on /login and /signup)
-- Fixed authentication race condition preventing navigation from appearing
-- All navigation uses wouter Link component with proper div wrappers (no nested anchors)
-- Improved component reusability with shared PageHeader, PageLayout, BackButton, and Breadcrumb components
-
-## Changelog
-
-```
-Changelog:
-- November 19, 2025: Complete dashboard-driven UI overhaul (sidebar, bottom nav, dashboard page, breadcrumbs)
-- October 24, 2025: Comprehensive memorization analytics dashboard (heatmap, calendar, progress tracking)
-- October 18, 2025: UI Simplification & Focus Enhancement (centered buttons, multilingual share)
-- October 18, 2025: Complete audio coverage (6,180 files) and deployment readiness
-- October 17, 2025: UI component refactoring to eliminate duplication
-- July 04, 2025: Implemented local audio hosting and database migration
-- July 03, 2025: Initial setup
-```
-
-## User Preferences
-
-```
-Preferred communication style: Simple, everyday language.
-```
+- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
