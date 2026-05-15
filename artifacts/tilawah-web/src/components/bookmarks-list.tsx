@@ -220,7 +220,7 @@ export const BookmarksList = ({ onPlayAyah }: BookmarksListProps) => {
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-3">
                       <p 
                         className="text-xl leading-loose font-arabic text-gray-900 dark:text-white text-center"
-                        style={{ fontFamily: "'Amiri Quran', 'Arabic Typesetting', serif", lineHeight: 1.8 }}
+                        style={{ lineHeight: 1.8 }}
                         dir="rtl"
                       >
                         {bookmark.text}

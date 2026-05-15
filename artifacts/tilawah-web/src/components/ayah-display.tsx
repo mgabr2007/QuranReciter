@@ -110,11 +110,8 @@ export const AyahDisplay = ({
                 </span>
               </div>
               <p
-                className="text-2xl md:text-3xl text-gray-900 dark:text-white text-right"
-                style={{
-                  fontFamily: "'Amiri Quran', 'Arabic Typesetting', serif",
-                  lineHeight: 2.2,
-                }}
+                className="text-2xl md:text-3xl text-gray-900 dark:text-white text-right font-arabic"
+                style={{ lineHeight: 2.2 }}
                 dir="rtl"
               >
                 {currentAyah.text}
@@ -125,11 +122,8 @@ export const AyahDisplay = ({
           /* Arabic only — full width */
           <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
             <p
-              className="text-2xl md:text-3xl text-gray-900 dark:text-white text-center"
-              style={{
-                fontFamily: "'Amiri Quran', 'Arabic Typesetting', serif",
-                lineHeight: 2.2,
-              }}
+              className="text-2xl md:text-3xl text-gray-900 dark:text-white text-center font-arabic"
+              style={{ lineHeight: 2.2 }}
               dir="rtl"
             >
               {currentAyah.text}

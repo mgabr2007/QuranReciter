@@ -207,7 +207,6 @@ export const VerseSearch = ({ onPlayVerse, onClose }: VerseSearchProps) => {
                     {/* Arabic Text */}
                     <div 
                       className="text-right text-xl leading-relaxed mb-3 font-arabic"
-                      style={{ fontFamily: 'Amiri Quran, serif' }}
                       dangerouslySetInnerHTML={{ __html: result.highlightedText }}
                     />
                     

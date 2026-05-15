@@ -1004,5 +1004,5 @@ const styles = StyleSheet.create({
   surahItemInfo: { flex: 1 },
   surahItemName: { fontSize: 15, fontWeight: "600" as const },
   surahItemMeta: { fontSize: 12, marginTop: 2 },
-  surahItemArabic: { fontSize: 18, fontWeight: "400" as const },
+  surahItemArabic: { fontSize: 18, fontWeight: "400" as const, fontFamily: "AmiriQuran" },
 });
