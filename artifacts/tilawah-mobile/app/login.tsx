@@ -304,8 +304,8 @@ const styles = StyleSheet.create({
   blessing: {
     textAlign: "center",
     color: "rgba(255,255,255,0.7)",
-    fontSize: 16,
-    fontFamily: "serif",
+    fontSize: 18,
+    fontFamily: "Amiri_400Regular",
   },
   rtlText: {
     textAlign: "right",

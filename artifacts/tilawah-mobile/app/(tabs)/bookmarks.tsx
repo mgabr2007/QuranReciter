@@ -267,8 +267,8 @@ const styles = StyleSheet.create({
     fontSize: 22,
     textAlign: "right",
     writingDirection: "rtl",
-    lineHeight: 40,
-    fontWeight: "400" as const,
+    lineHeight: 44,
+    fontFamily: "Amiri_400Regular",
   },
   translationText: {
     fontSize: 13,

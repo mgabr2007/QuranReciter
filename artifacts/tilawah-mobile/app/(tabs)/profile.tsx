@@ -239,9 +239,9 @@ const styles = StyleSheet.create({
   userEmail: { fontSize: 13, color: "rgba(255,255,255,0.6)" },
   blessing: {
     marginTop: 8,
-    fontSize: 15,
+    fontSize: 18,
     color: "rgba(255,255,255,0.7)",
-    fontFamily: "serif",
+    fontFamily: "Amiri_400Regular",
   },
   signInCard: {
     flexDirection: "row",
