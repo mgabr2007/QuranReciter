@@ -1,4 +1,4 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
@@ -13,7 +13,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -38,11 +37,15 @@ interface Ayah {
   text: string;
   translation?: string;
   translationSahih?: string;
-  audioUrl?: string;
 }
 
-function padNum(n: number, len: number) {
+function padNum(n: number, len: number): string {
   return String(n).padStart(len, "0");
+}
+
+function getAudioUrl(baseUrl: string, surahId: number, ayahNumber: number): string {
+  const filename = `${padNum(surahId, 3)}${padNum(ayahNumber, 3)}.mp3`;
+  return `${baseUrl}/audio/alafasy/${filename}`;
 }
 
 export default function ReciteScreen() {
@@ -53,7 +56,9 @@ export default function ReciteScreen() {
 
   const [surahs, setSurahs] = useState<Surah[]>([]);
   const [selectedSurah, setSelectedSurah] = useState<Surah | null>(null);
-  const [ayahs, setAyahs] = useState<Ayah[]>([]);
+  const [allAyahs, setAllAyahs] = useState<Ayah[]>([]);
+  const [startAyah, setStartAyah] = useState(1);
+  const [endAyah, setEndAyah] = useState(7);
   const [currentAyahIndex, setCurrentAyahIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -70,13 +75,13 @@ export default function ReciteScreen() {
   const isPlayingRef = useRef(false);
   const currentIndexRef = useRef(0);
 
-  // Sync refs
-  useEffect(() => {
-    isPlayingRef.current = isPlaying;
-  }, [isPlaying]);
-  useEffect(() => {
-    currentIndexRef.current = currentAyahIndex;
-  }, [currentAyahIndex]);
+  // Derived: ayahs within the selected range
+  const rangeAyahs = allAyahs.filter(
+    (a) => a.number >= startAyah && a.number <= endAyah
+  );
+
+  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+  useEffect(() => { currentIndexRef.current = currentAyahIndex; }, [currentAyahIndex]);
 
   // Load surahs
   useEffect(() => {
@@ -84,7 +89,9 @@ export default function ReciteScreen() {
       .then((r) => r.json())
       .then((data: Surah[]) => {
         setSurahs(data);
-        if (data.length > 0) setSelectedSurah(data[0]);
+        if (data.length > 0) {
+          setSelectedSurah(data[0]);
+        }
       })
       .catch(() => {})
       .finally(() => setLoadingSurahs(false));
@@ -93,18 +100,24 @@ export default function ReciteScreen() {
   // Load ayahs when surah changes
   useEffect(() => {
     if (!selectedSurah) return;
+    setAllAyahs([]);
     fetch(`${baseUrl}/api/surahs/${selectedSurah.id}/ayahs`, {
       credentials: "include",
     })
       .then((r) => r.json())
-      .then((data: Ayah[]) => setAyahs(data))
+      .then((data: Ayah[]) => {
+        setAllAyahs(data);
+        setStartAyah(1);
+        setEndAyah(Math.min(7, selectedSurah.totalAyahs));
+        setCurrentAyahIndex(0);
+      })
       .catch(() => {});
   }, [selectedSurah, baseUrl]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (soundRef.current) soundRef.current.unloadAsync();
+      if (soundRef.current) { soundRef.current.unloadAsync(); }
       if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
     };
   }, []);
@@ -124,24 +137,19 @@ export default function ReciteScreen() {
 
   const playAyah = useCallback(
     async (index: number) => {
-      if (!ayahs[index] || !selectedSurah) return;
+      if (!rangeAyahs[index] || !selectedSurah) return;
 
       setIsLoading(true);
       setAudioError(null);
       setCurrentAyahIndex(index);
 
-      // Unload previous
       if (soundRef.current) {
-        try {
-          await soundRef.current.unloadAsync();
-        } catch {}
+        try { await soundRef.current.unloadAsync(); } catch {}
         soundRef.current = null;
       }
 
-      const ayah = ayahs[index];
-      const surahPad = padNum(selectedSurah.id, 3);
-      const ayahPad = padNum(ayah.number, 3);
-      const audioUrl = `${baseUrl}/audio/alafasy/${surahPad}/${ayahPad}.mp3`;
+      const ayah = rangeAyahs[index];
+      const audioUrl = getAudioUrl(baseUrl, selectedSurah.id, ayah.number);
 
       try {
         await Audio.setAudioModeAsync({
@@ -161,8 +169,7 @@ export default function ReciteScreen() {
           if (!status.isLoaded) return;
           if (status.didJustFinish) {
             const idx = currentIndexRef.current;
-            const playing = isPlayingRef.current;
-            if (!playing) return;
+            if (!isPlayingRef.current) return;
 
             if (autoRepeat) {
               setTimeout(() => {
@@ -172,7 +179,7 @@ export default function ReciteScreen() {
             }
 
             const nextIdx = idx + 1;
-            if (nextIdx < ayahs.length) {
+            if (nextIdx < rangeAyahs.length) {
               setCompletedCount((c) => c + 1);
               pauseTimerRef.current = setTimeout(() => {
                 if (isPlayingRef.current) playAyah(nextIdx);
@@ -180,20 +187,19 @@ export default function ReciteScreen() {
             } else {
               setIsPlaying(false);
               setCompletedCount((c) => c + 1);
-              Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success
-              );
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               Alert.alert("", t("sessionCompleted"));
             }
           }
         });
-      } catch (err) {
+      } catch {
         setIsLoading(false);
         setAudioError(t("tryAgain"));
         setIsPlaying(false);
       }
     },
-    [ayahs, selectedSurah, baseUrl, pauseDuration, autoRepeat, t]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rangeAyahs, selectedSurah, baseUrl, pauseDuration, autoRepeat, t]
   );
 
   const handlePlay = useCallback(async () => {
@@ -214,15 +220,13 @@ export default function ReciteScreen() {
 
   const handlePrevious = useCallback(async () => {
     await stopAll();
-    const prev = Math.max(0, currentAyahIndex - 1);
-    setCurrentAyahIndex(prev);
-  }, [currentAyahIndex, stopAll]);
+    setCurrentAyahIndex((i) => Math.max(0, i - 1));
+  }, [stopAll]);
 
   const handleNext = useCallback(async () => {
     await stopAll();
-    const next = Math.min(ayahs.length - 1, currentAyahIndex + 1);
-    setCurrentAyahIndex(next);
-  }, [currentAyahIndex, ayahs.length, stopAll]);
+    setCurrentAyahIndex((i) => Math.min(rangeAyahs.length - 1, i + 1));
+  }, [stopAll, rangeAyahs.length]);
 
   const handleSurahSelect = useCallback(
     async (surah: Surah) => {
@@ -235,11 +239,31 @@ export default function ReciteScreen() {
     [stopAll]
   );
 
-  const currentAyah = ayahs[currentAyahIndex];
-  const progress = ayahs.length > 0 ? (currentAyahIndex + 1) / ayahs.length : 0;
+  const handleRangeChange = useCallback(
+    async (field: "start" | "end", delta: number) => {
+      await stopAll();
+      if (field === "start") {
+        setStartAyah((v) => {
+          const next = Math.max(1, Math.min(v + delta, endAyah));
+          return next;
+        });
+      } else {
+        setEndAyah((v) => {
+          const max = selectedSurah?.totalAyahs ?? 1;
+          const next = Math.max(startAyah, Math.min(v + delta, max));
+          return next;
+        });
+      }
+      setCurrentAyahIndex(0);
+    },
+    [stopAll, endAyah, startAyah, selectedSurah]
+  );
 
-  const topPad =
-    insets.top + (Platform.OS === "web" ? 67 : 0);
+  const currentAyah = rangeAyahs[currentAyahIndex];
+  const progress =
+    rangeAyahs.length > 0 ? (currentAyahIndex + 1) / rangeAyahs.length : 0;
+
+  const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
   const botPad = insets.bottom + (Platform.OS === "web" ? 34 : 0) + 90;
 
   return (
@@ -287,11 +311,7 @@ export default function ReciteScreen() {
           onPress={() => setShowSurahPicker(true)}
           style={[
             styles.surahSelector,
-            {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
-              borderRadius: colors.radius,
-            },
+            { borderColor: colors.border, borderRadius: colors.radius },
           ]}
         >
           <LinearGradient
@@ -325,6 +345,104 @@ export default function ReciteScreen() {
           </LinearGradient>
         </Pressable>
 
+        {/* Ayah Range Picker */}
+        {selectedSurah && allAyahs.length > 0 && (
+          <View
+            style={[
+              styles.rangeCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                borderRadius: colors.radius,
+              },
+            ]}
+          >
+            <Text style={[styles.rangeTitle, { color: colors.mutedForeground }]}>
+              {t("ayahRange")}
+            </Text>
+            <View style={styles.rangeRow}>
+              {/* From */}
+              <View style={styles.rangeStepper}>
+                <Text style={[styles.rangeLabel, { color: colors.mutedForeground }]}>
+                  {t("from")}
+                </Text>
+                <View style={styles.stepperRow}>
+                  <Pressable
+                    onPress={() => handleRangeChange("start", -1)}
+                    style={[
+                      styles.stepBtn,
+                      { backgroundColor: colors.muted, borderRadius: 8 },
+                    ]}
+                  >
+                    <Ionicons name="remove" size={16} color={colors.foreground} />
+                  </Pressable>
+                  <Text style={[styles.stepValue, { color: colors.foreground }]}>
+                    {startAyah}
+                  </Text>
+                  <Pressable
+                    onPress={() => handleRangeChange("start", 1)}
+                    style={[
+                      styles.stepBtn,
+                      { backgroundColor: colors.muted, borderRadius: 8 },
+                    ]}
+                  >
+                    <Ionicons name="add" size={16} color={colors.foreground} />
+                  </Pressable>
+                </View>
+              </View>
+
+              <View
+                style={[styles.rangeDivider, { backgroundColor: colors.border }]}
+              />
+
+              {/* To */}
+              <View style={styles.rangeStepper}>
+                <Text style={[styles.rangeLabel, { color: colors.mutedForeground }]}>
+                  {t("to")}
+                </Text>
+                <View style={styles.stepperRow}>
+                  <Pressable
+                    onPress={() => handleRangeChange("end", -1)}
+                    style={[
+                      styles.stepBtn,
+                      { backgroundColor: colors.muted, borderRadius: 8 },
+                    ]}
+                  >
+                    <Ionicons name="remove" size={16} color={colors.foreground} />
+                  </Pressable>
+                  <Text style={[styles.stepValue, { color: colors.foreground }]}>
+                    {endAyah}
+                  </Text>
+                  <Pressable
+                    onPress={() => handleRangeChange("end", 1)}
+                    style={[
+                      styles.stepBtn,
+                      { backgroundColor: colors.muted, borderRadius: 8 },
+                    ]}
+                  >
+                    <Ionicons name="add" size={16} color={colors.foreground} />
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* Count badge */}
+              <View
+                style={[
+                  styles.rangeBadge,
+                  { backgroundColor: colors.islamicGreen + "22" },
+                ]}
+              >
+                <Text style={[styles.rangeBadgeText, { color: colors.islamicGreen }]}>
+                  {rangeAyahs.length}
+                </Text>
+                <Text style={[styles.rangeBadgeLabel, { color: colors.islamicGreen }]}>
+                  {t("ayahs")}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Arabic Text Display */}
         <View
           style={[
@@ -339,23 +457,27 @@ export default function ReciteScreen() {
           {currentAyah ? (
             <>
               <View style={styles.ayahHeader}>
-                <View style={[styles.ayahBadge, { backgroundColor: colors.islamicGreen + "22" }]}>
-                  <Text style={[styles.ayahBadgeText, { color: colors.islamicGreen }]}>
+                <View
+                  style={[
+                    styles.ayahBadge,
+                    { backgroundColor: colors.islamicGreen + "22" },
+                  ]}
+                >
+                  <Text
+                    style={[styles.ayahBadgeText, { color: colors.islamicGreen }]}
+                  >
                     {currentAyah.number}
                   </Text>
                 </View>
-                <Text style={[styles.ayahProgress, { color: colors.mutedForeground }]}>
-                  {currentAyahIndex + 1} / {ayahs.length}
+                <Text
+                  style={[styles.ayahProgress, { color: colors.mutedForeground }]}
+                >
+                  {currentAyahIndex + 1} / {rangeAyahs.length}
                 </Text>
               </View>
 
               {/* Arabic Text */}
-              <Text
-                style={[
-                  styles.arabicText,
-                  { color: colors.foreground },
-                ]}
-              >
+              <Text style={[styles.arabicText, { color: colors.foreground }]}>
                 {currentAyah.text}
               </Text>
 
@@ -364,7 +486,10 @@ export default function ReciteScreen() {
                 <View
                   style={[
                     styles.translationBox,
-                    { backgroundColor: colors.muted, borderRadius: colors.radius - 4 },
+                    {
+                      backgroundColor: colors.muted,
+                      borderRadius: colors.radius - 4,
+                    },
                   ]}
                 >
                   <Text
@@ -378,22 +503,25 @@ export default function ReciteScreen() {
                 </View>
               )}
 
-              {/* Progress bar */}
-              <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+              {/* Progress bar using flexGrow instead of % string */}
+              <View style={[styles.progressBarTrack, { backgroundColor: colors.border }]}>
                 <View
                   style={[
-                    styles.progressFill,
+                    styles.progressBarFill,
                     {
                       backgroundColor: colors.islamicGreen,
-                      width: `${progress * 100}%` as any,
+                      flexGrow: progress,
                     },
                   ]}
                 />
+                <View style={{ flexGrow: 1 - progress }} />
               </View>
             </>
           ) : (
             <View style={styles.emptyAyah}>
-              <Text style={[styles.arabicPlaceholder, { color: colors.mutedForeground }]}>
+              <Text
+                style={[styles.arabicPlaceholder, { color: colors.mutedForeground }]}
+              >
                 ﷽
               </Text>
               <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
@@ -408,7 +536,10 @@ export default function ReciteScreen() {
           <View
             style={[
               styles.errorBox,
-              { backgroundColor: colors.destructive + "22", borderRadius: colors.radius },
+              {
+                backgroundColor: colors.destructive + "22",
+                borderRadius: colors.radius,
+              },
             ]}
           >
             <Ionicons name="warning-outline" size={16} color={colors.destructive} />
@@ -429,12 +560,14 @@ export default function ReciteScreen() {
             },
           ]}
         >
-          {/* Previous / Play / Next */}
           <View style={styles.mainControls}>
             <Pressable
               onPress={handlePrevious}
               disabled={currentAyahIndex === 0}
-              style={({ pressed }) => [styles.controlBtn, { opacity: pressed ? 0.6 : 1 }]}
+              style={({ pressed }) => [
+                styles.controlBtn,
+                { opacity: pressed ? 0.6 : 1 },
+              ]}
             >
               <Ionicons
                 name="play-skip-back"
@@ -449,7 +582,7 @@ export default function ReciteScreen() {
 
             <Pressable
               onPress={handlePlay}
-              disabled={!selectedSurah || ayahs.length === 0}
+              disabled={!selectedSurah || rangeAyahs.length === 0}
               style={({ pressed }) => [
                 styles.playBtn,
                 {
@@ -472,14 +605,17 @@ export default function ReciteScreen() {
 
             <Pressable
               onPress={handleNext}
-              disabled={currentAyahIndex >= ayahs.length - 1}
-              style={({ pressed }) => [styles.controlBtn, { opacity: pressed ? 0.6 : 1 }]}
+              disabled={currentAyahIndex >= rangeAyahs.length - 1}
+              style={({ pressed }) => [
+                styles.controlBtn,
+                { opacity: pressed ? 0.6 : 1 },
+              ]}
             >
               <Ionicons
                 name="play-skip-forward"
                 size={26}
                 color={
-                  currentAyahIndex >= ayahs.length - 1
+                  currentAyahIndex >= rangeAyahs.length - 1
                     ? colors.mutedForeground
                     : colors.foreground
                 }
@@ -490,7 +626,11 @@ export default function ReciteScreen() {
           {/* Pause Duration + Auto Repeat */}
           <View style={styles.settingsRow}>
             <View style={styles.pauseControl}>
-              <Ionicons name="timer-outline" size={14} color={colors.mutedForeground} />
+              <Ionicons
+                name="timer-outline"
+                size={14}
+                color={colors.mutedForeground}
+              />
               <Pressable
                 onPress={() => setPauseDuration((v) => Math.max(0, v - 1))}
                 style={styles.smallBtn}
@@ -540,7 +680,11 @@ export default function ReciteScreen() {
               },
             ]}
           >
-            <Ionicons name="checkmark-circle" size={16} color={colors.islamicGreen} />
+            <Ionicons
+              name="checkmark-circle"
+              size={16}
+              color={colors.islamicGreen}
+            />
             <Text style={[styles.statsText, { color: colors.islamicGreen }]}>
               {completedCount} {t("ayahs")} {t("completed")}
             </Text>
@@ -557,10 +701,7 @@ export default function ReciteScreen() {
       >
         <View style={[styles.modal, { backgroundColor: colors.background }]}>
           <View
-            style={[
-              styles.modalHeader,
-              { borderBottomColor: colors.border },
-            ]}
+            style={[styles.modalHeader, { borderBottomColor: colors.border }]}
           >
             <Text style={[styles.modalTitle, { color: colors.foreground }]}>
               {t("selectSurah")}
@@ -594,19 +735,36 @@ export default function ReciteScreen() {
                     { backgroundColor: colors.islamicGreen + "22" },
                   ]}
                 >
-                  <Text style={[styles.surahNumText, { color: colors.islamicGreen }]}>
+                  <Text
+                    style={[
+                      styles.surahNumText,
+                      { color: colors.islamicGreen },
+                    ]}
+                  >
                     {item.id}
                   </Text>
                 </View>
                 <View style={styles.surahItemInfo}>
-                  <Text style={[styles.surahItemName, { color: colors.foreground }]}>
+                  <Text
+                    style={[styles.surahItemName, { color: colors.foreground }]}
+                  >
                     {item.nameEnglish ?? item.name}
                   </Text>
-                  <Text style={[styles.surahItemMeta, { color: colors.mutedForeground }]}>
+                  <Text
+                    style={[
+                      styles.surahItemMeta,
+                      { color: colors.mutedForeground },
+                    ]}
+                  >
                     {item.totalAyahs} {t("ayahs")} · {item.revelationType}
                   </Text>
                 </View>
-                <Text style={[styles.surahItemArabic, { color: colors.islamicGreen }]}>
+                <Text
+                  style={[
+                    styles.surahItemArabic,
+                    { color: colors.islamicGreen },
+                  ]}
+                >
                   {item.nameArabic}
                 </Text>
               </Pressable>
@@ -661,6 +819,49 @@ const styles = StyleSheet.create({
   },
   surahMeta: { alignItems: "flex-end", gap: 4 },
   surahAyahCount: { color: "rgba(255,255,255,0.8)", fontSize: 12 },
+  rangeCard: {
+    borderWidth: 1,
+    padding: 14,
+    gap: 10,
+  },
+  rangeTitle: {
+    fontSize: 11,
+    fontWeight: "600" as const,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  rangeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  rangeStepper: {
+    flex: 1,
+    alignItems: "center",
+    gap: 6,
+  },
+  rangeLabel: { fontSize: 12, fontWeight: "500" as const },
+  stepperRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  stepBtn: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepValue: { fontSize: 18, fontWeight: "700" as const, minWidth: 36, textAlign: "center" },
+  rangeDivider: { width: 1, height: 40, alignSelf: "center" },
+  rangeBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  rangeBadgeText: { fontSize: 20, fontWeight: "700" as const },
+  rangeBadgeLabel: { fontSize: 10, fontWeight: "500" as const },
   ayahCard: {
     borderWidth: 1,
     padding: 20,
@@ -689,12 +890,16 @@ const styles = StyleSheet.create({
   },
   translationBox: { padding: 12 },
   translationText: { fontSize: 14, lineHeight: 22 },
-  progressBar: {
+  progressBarTrack: {
     height: 3,
     borderRadius: 2,
     overflow: "hidden",
+    flexDirection: "row",
   },
-  progressFill: { height: "100%", borderRadius: 2 },
+  progressBarFill: {
+    height: "100%",
+    borderRadius: 2,
+  },
   emptyAyah: { alignItems: "center", paddingVertical: 16, gap: 8 },
   arabicPlaceholder: { fontSize: 40 },
   emptyText: { fontSize: 14, textAlign: "center" },
@@ -751,7 +956,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  pauseValue: { fontSize: 15, fontWeight: "600" as const, minWidth: 32, textAlign: "center" },
+  pauseValue: {
+    fontSize: 15,
+    fontWeight: "600" as const,
+    minWidth: 32,
+    textAlign: "center",
+  },
   repeatBtn: {
     width: 36,
     height: 36,

@@ -283,14 +283,19 @@ export default function CommunitiesScreen() {
     </View>
   );
 
-  const displayData = activeTab === "browse" ? communities : myCommunities;
+  type DisplayItem = Community | MyCommunity;
+  const displayData: DisplayItem[] = activeTab === "browse" ? communities : myCommunities;
+  const renderItem = ({ item }: { item: DisplayItem }) =>
+    activeTab === "browse"
+      ? renderCommunity({ item: item as Community })
+      : renderMyCommunity({ item: item as MyCommunity });
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <FlatList
-        data={displayData as any[]}
+      <FlatList<DisplayItem>
+        data={displayData}
         keyExtractor={(item) => String(item.id)}
-        renderItem={activeTab === "browse" ? renderCommunity : renderMyCommunity}
+        renderItem={renderItem}
         contentContainerStyle={{
           paddingTop: topPad + 8,
           paddingBottom: botPad,
